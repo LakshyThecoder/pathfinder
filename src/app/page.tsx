@@ -99,7 +99,7 @@ export default function Home() {
     <main className="flex flex-col items-center px-4 pt-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
        <div className="absolute top-0 left-0 -z-10 h-full w-full bg-background">
         <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-[radial-gradient(circle_400px_at_50%_300px,#3b82f633,transparent)]"></div>
+        <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-[radial-gradient(circle_400px_at_50%_300px,#a020f033,transparent)]"></div>
       </div>
       
       <section className="w-full max-w-3xl text-center min-h-[calc(100vh-8rem)] flex flex-col justify-center items-center">
