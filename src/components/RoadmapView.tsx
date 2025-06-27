@@ -118,18 +118,25 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
     fetchRoadmap();
   }, [query, roadmapId, toast, router]);
 
-  const handleSaveRoadmap = async () => {
-    if (!roadmapData || !user) {
-      toast({
-          variant: "destructive",
-          title: "Cannot Save",
-          description: "This roadmap cannot be saved or you are not logged in.",
-      });
-      return;
+  const isSaved = !!roadmapData?.createdAt;
+
+  const handleSaveClick = async () => {
+    if (!user) {
+        setLoginDialogOpen(true);
+        return;
+    }
+
+    if (!roadmapData || isSaved) {
+        return; // Don't save if there's no data or it's already saved.
     }
     
     setIsSaving(true);
-    const result = await saveRoadmapAction(roadmapData);
+    // Combine roadmap data with the latest node statuses for saving
+    const roadmapToSave: StoredRoadmap = {
+        ...roadmapData,
+        nodeStatuses
+    };
+    const result = await saveRoadmapAction(roadmapToSave);
     setIsSaving(false);
 
     if ('error' in result) {
@@ -179,10 +186,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   if (isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
-
-  const isSaved = !!roadmapData?.createdAt;
-  const canSave = !!user && !isSaved;
-
+  
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div id="roadmap-container" className="h-full w-full bg-background">
@@ -200,7 +204,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
       />
       <RoadmapControls 
         roadmapTitle={roadmapData.title}
-        onSave={canSave ? handleSaveRoadmap : undefined}
+        onSaveClick={handleSaveClick}
         isSaved={isSaved}
         isSaving={isSaving}
       />

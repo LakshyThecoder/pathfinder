@@ -10,12 +10,12 @@ import { cn } from '@/lib/utils';
 
 interface RoadmapControlsProps {
     roadmapTitle: string;
-    onSave?: () => void;
+    onSaveClick: () => void;
     isSaved: boolean;
     isSaving: boolean;
 }
 
-export default function RoadmapControls({ roadmapTitle, onSave, isSaved, isSaving }: RoadmapControlsProps) {
+export default function RoadmapControls({ roadmapTitle, onSaveClick, isSaved, isSaving }: RoadmapControlsProps) {
     const { toast } = useToast();
 
     const handleShare = useCallback(() => {
@@ -55,43 +55,29 @@ export default function RoadmapControls({ roadmapTitle, onSave, isSaved, isSavin
         <TooltipProvider>
             <div className="absolute top-6 right-6 z-20">
                 <div className="flex items-center gap-1 p-1 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg">
-                    {/* Save Button Logic */}
-                    {onSave && (
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="rounded-full h-10 w-10 group" 
-                                    onClick={onSave}
-                                    disabled={isSaving || isSaved}
-                                >
-                                    {isSaving ? (
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                    ) : (
-                                        <Star className={cn("h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors", isSaved && "fill-primary text-primary")} />
-                                    )}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{isSaved ? 'Saved' : (isSaving ? 'Saving...' : 'Save Roadmap')}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    )}
-                     {/* Show a disabled "Saved" button if already saved */}
-                     {!onSave && isSaved && (
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" disabled>
-                                    <Star className="h-5 w-5 fill-primary text-primary" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Saved</p>
-                            </TooltipContent>
-                        </Tooltip>
-                     )}
-
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="rounded-full h-10 w-10 group" 
+                                onClick={onSaveClick}
+                                disabled={isSaving || isSaved}
+                            >
+                                {isSaving ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <Star className={cn(
+                                        "h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors",
+                                        isSaved && "fill-primary text-primary"
+                                    )} />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{isSaved ? 'Saved' : (isSaving ? 'Saving...' : 'Save Roadmap')}</p>
+                        </TooltipContent>
+                    </Tooltip>
 
                     {/* Share Button */}
                     <Tooltip>
