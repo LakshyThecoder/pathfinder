@@ -51,14 +51,28 @@ export async function saveRoadmapAction(roadmap: StoredRoadmap): Promise<StoredR
 
 export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { error: string }> {
     try {
-      const result = await generateRoadmap({ query });
+      // 1. Generate the basic roadmap structure from the AI.
+      const generatedRoadmap = await generateRoadmap({ query });
+      
+      // 2. Check if the user is logged in.
       const userId = await getUserId();
 
-      // Return an unsaved roadmap structure. Saving is now an explicit user action.
+      // 3. If the user is logged in, save it to the database immediately.
+      if (userId) {
+        const savedRoadmap = await saveRoadmapToDb(userId, generatedRoadmap, query);
+        // Serialize the timestamp before sending to the client
+        return {
+            ...savedRoadmap,
+            createdAt: (savedRoadmap.createdAt as any).toDate().toISOString(),
+        } as StoredRoadmap;
+      }
+
+      // 4. If the user is not logged in, return the unsaved structure.
+      // The client will handle prompting them to log in if they try to save.
       return {
-        ...(result as GenerateRoadmapOutput),
-        id: result.id || `temp-${Date.now()}`,
-        userId: userId || '',
+        ...(generatedRoadmap as GenerateRoadmapOutput),
+        id: generatedRoadmap.id || `temp-${Date.now()}`,
+        userId: '',
         query: query,
         nodeStatuses: {},
         // No 'createdAt' property, as it has not been saved to the database.

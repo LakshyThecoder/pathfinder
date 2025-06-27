@@ -112,6 +112,12 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
       } else {
         setRoadmapData(result);
         setNodeStatuses(result.nodeStatuses || {});
+        
+        // If a new roadmap was generated (with a query) and it was auto-saved (has createdAt),
+        // update the URL to use its persistent ID instead of the query param.
+        if (query && result.createdAt) {
+          router.replace(`/roadmap?id=${result.id}`, { scroll: false });
+        }
       }
     }
 
