@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import type { RoadmapNodeData, NodeStatus } from '@/types';
+import { useRouter } from 'next/navigation';
+import type { RoadmapNodeData, NodeStatus, StoredRoadmap } from '@/types';
 import RoadmapTree from './RoadmapTree';
 import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
 import RoadmapProgress from './RoadmapProgress';
-import { getAiRoadmap } from '@/app/actions';
+import { getAiRoadmap, getStoredRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import LoginPromptDialog from './LoginPromptDialog';
@@ -32,7 +33,7 @@ function RoadmapLoading() {
     }, 2500);
 
     return () => clearInterval(intervalId);
-  }, [loadingMessages]);
+  }, []);
 
   return (
     <div className="p-8 w-full h-full flex flex-col items-center justify-center">
@@ -64,8 +65,8 @@ function RoadmapLoading() {
   );
 }
 
-export default function RoadmapView({ query }: { query: string }) {
-  const [roadmapData, setRoadmapData] = useState<RoadmapNodeData | null>(null);
+export default function RoadmapView({ query, roadmapId }: { query?: string, roadmapId?: string }) {
+  const [roadmapData, setRoadmapData] = useState<StoredRoadmap | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -73,6 +74,7 @@ export default function RoadmapView({ query }: { query: string }) {
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
 
   useEffect(() => {
@@ -81,28 +83,48 @@ export default function RoadmapView({ query }: { query: string }) {
     setNodeStatuses({});
 
     async function fetchRoadmap() {
-      const result = await getAiRoadmap({ query });
+        let result: StoredRoadmap | { error: string };
+        if (roadmapId) {
+            result = await getStoredRoadmap(roadmapId);
+        } else if (query) {
+            result = await getAiRoadmap(query);
+        } else {
+            // Handle case with no query or id
+            setIsLoading(false);
+            toast({
+                variant: 'destructive',
+                title: 'No roadmap specified',
+                description: 'Please provide a topic to generate a roadmap.',
+            });
+            router.push('/');
+            return;
+        }
+
       setIsLoading(false);
       if ('error' in result) {
         toast({
           variant: 'destructive',
-          title: 'Error Generating Roadmap',
+          title: 'Error Loading Roadmap',
           description: result.error,
         });
+        router.push('/');
       } else {
         setRoadmapData(result);
+        setNodeStatuses(result.nodeStatuses || {});
+        // If it was a new roadmap, update URL with its new ID
+        if (!roadmapId && result.id && result.userId) {
+          router.replace(`/roadmap?id=${result.id}`, { scroll: false });
+        }
       }
     }
 
-    if (query) {
-      fetchRoadmap();
-    }
-  }, [query, toast]);
+    fetchRoadmap();
+  }, [query, roadmapId, toast, router]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
     setSelectedNode(node);
-    if (!user) {
+    if (!user && roadmapData?.userId) { // Check if it's a saved roadmap
         setLoginDialogOpen(true);
     } else {
         setChatbotOpen(true);
@@ -145,13 +167,14 @@ export default function RoadmapView({ query }: { query: string }) {
         completedNodes={completedNodes}
         skippedNodes={skippedNodes}
       />
-      <RoadmapControls query={query} roadmapTitle={roadmapData.title} />
+      <RoadmapControls roadmapTitle={roadmapData.title} isSaved={!!roadmapData.userId} />
       <Chatbot 
         isOpen={isChatbotOpen} 
         onOpenChange={setChatbotOpen} 
         selectedNode={selectedNode}
         onStatusChange={handleStatusChange}
         currentNodeStatus={selectedNode ? nodeStatuses[selectedNode.id] || 'not-started' : 'not-started'}
+        roadmapId={roadmapData.id}
       />
       <LoginPromptDialog isOpen={isLoginDialogOpen} onOpenChange={setLoginDialogOpen} />
     </div>

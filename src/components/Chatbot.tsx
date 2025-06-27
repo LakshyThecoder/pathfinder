@@ -4,12 +4,12 @@ import { useEffect, useState, useTransition, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import type { RoadmapNodeData, NodeStatus } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getRoadmapInsight, getFollowUpAnswer } from "@/app/actions";
+import { getRoadmapInsight, getFollowUpAnswer, updateNodeStatusAction } from "@/app/actions";
 import type { RoadmapInsightOutput } from "@/ai/flows/roadmap-insight-generator";
 import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
@@ -21,6 +21,7 @@ interface ChatbotProps {
   selectedNode: RoadmapNodeData | null;
   onStatusChange: (nodeId: string, status: NodeStatus) => void;
   currentNodeStatus: NodeStatus;
+  roadmapId?: string;
 }
 
 type Message = {
@@ -65,7 +66,7 @@ const InitialInsight = ({ insight }: { insight: RoadmapInsightOutput }) => (
   </div>
 );
 
-export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusChange, currentNodeStatus }: ChatbotProps) {
+export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusChange, currentNodeStatus, roadmapId }: ChatbotProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -127,8 +128,18 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
   };
 
   const handleStatusClick = (status: NodeStatus) => {
-    if (selectedNode) {
+    if (selectedNode && roadmapId) {
         onStatusChange(selectedNode.id, status);
+        updateNodeStatusAction(roadmapId, selectedNode.id, status);
+    } else if (selectedNode) {
+        // Handle local status update for logged-out users
+        onStatusChange(selectedNode.id, status);
+        if (!roadmapId) {
+            toast({
+                title: "Login to Save Progress",
+                description: "Your progress will be saved once you log in.",
+            });
+        }
     }
   };
 
@@ -161,7 +172,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStatusClick(action.status)}
-                            className={cn('flex-1 text-xs gap-1.5', action.className, currentNodeStatus === action.status && 'bg-accent')}
+                            className={cn('flex-1 text-xs gap-1.5', action.className, currentNodeStatus === action.status && 'bg-primary/20')}
                             title={action.label}
                         >
                             <action.icon className="h-4 w-4" />
