@@ -35,16 +35,15 @@ const prompt = ai.definePrompt({
   name: 'roadmapInsightPrompt',
   input: {schema: RoadmapInsightInputSchema},
   output: {schema: RoadmapInsightOutputSchema},
-  prompt: `You are an AI assistant designed to provide insights, resources, and duration estimates for learning roadmap nodes.
+  prompt: `You are an expert learning advisor. For the given roadmap node content, provide a detailed response in the required structured JSON format.
 
-  Based on the content of the node, provide:
+**Roadmap Node:** {{{nodeContent}}}
 
-  1.  A concise insight about the topic.
-  2.  A list of recommended resources (e.g., tutorials, documentation, courses).
-  3.  An estimated duration to learn the topic.
-
-  Node Content: {{{nodeContent}}}
-  `,
+Based on the node content, provide:
+- A concise insight about the topic for the 'insight' field.
+- A string containing a list of recommended resources (e.g., tutorials, documentation, courses) for the 'resources' field.
+- A string containing an estimated duration to learn the topic for the 'durationEstimate' field.
+`,
 });
 
 const roadmapInsightGeneratorFlow = ai.defineFlow(
