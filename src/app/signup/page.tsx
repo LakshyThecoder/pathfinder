@@ -39,10 +39,14 @@ export default function SignupPage() {
         description: "You've been successfully signed up.",
       });
     } catch (error: any) {
+      let description = error.message;
+      if (error.code === 'auth/invalid-api-key') {
+        description = 'Firebase API Key is invalid. Please check your .env file and ensure you have provided the correct Firebase project credentials.';
+      }
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: error.message,
+        description: description,
       });
     } finally {
       setIsLoading(false);
