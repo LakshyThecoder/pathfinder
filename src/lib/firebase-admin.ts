@@ -4,22 +4,25 @@ import type { ServiceAccount } from 'firebase-admin';
 import { cookies } from 'next/headers';
 
 if (!admin.apps.length) {
-    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
+    const serviceAccount: ServiceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // The private key must have newlines replaced to be read from the .env file correctly
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
 
-    if (!serviceAccountBase64) {
-        throw new Error('Firebase service account key is not set in .env.local. Please set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64.');
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+        throw new Error('Firebase Admin SDK environment variables are not set correctly in .env.local. Please check the file.');
     }
 
     try {
-        const decodedServiceAccount = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
-        const serviceAccount = JSON.parse(decodedServiceAccount) as ServiceAccount;
-        
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
     } catch (error: any) {
         console.error('Firebase Admin SDK Initialization Error:', error.message);
-        throw new Error('Could not initialize Firebase Admin SDK. The service account JSON may be malformed or invalid. Please check your .env.local file.');
+        // Provide a more specific error message to help with debugging.
+        throw new Error(`Could not initialize Firebase Admin SDK. The credential might be malformed. Error: ${error.message}`);
     }
 }
 
