@@ -45,7 +45,7 @@ export default function SignupPage() {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.push('/history');
+      router.push('/dashboard'); // Redirect to dashboard on successful signup
       toast({
         title: 'Account Created!',
         description: "You've been successfully signed up.",

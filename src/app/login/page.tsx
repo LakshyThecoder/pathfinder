@@ -36,7 +36,7 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/history');
+      router.push('/dashboard'); // Redirect to dashboard on successful login
       toast({
         title: 'Success!',
         description: 'You have been logged in.',
