@@ -24,8 +24,9 @@ export default function HistoryPage() {
       setLoading(true);
       getHistoryAction().then(data => {
         if (!data.error) {
-          setHistory(data.roadmaps as StoredRoadmap[]);
-          setFilteredHistory(data.roadmaps as StoredRoadmap[]);
+          const roadmaps = (data.roadmaps || []) as StoredRoadmap[];
+          setHistory(roadmaps);
+          setFilteredHistory(roadmaps);
         }
         setLoading(false);
       });
@@ -35,7 +36,7 @@ export default function HistoryPage() {
   useEffect(() => {
     const results = history.filter(item =>
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.query.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.query && item.query.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredHistory(results);
   }, [searchTerm, history]);
@@ -87,7 +88,9 @@ export default function HistoryPage() {
                 <CardDescription>Original query: "{item.query}"</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground">Created on: {new Date(item.createdAt?.toDate()).toLocaleDateString()}</p>
+                 {item.createdAt?.toDate && (
+                    <p className="text-sm text-muted-foreground">Created on: {new Date(item.createdAt.toDate()).toLocaleDateString()}</p>
+                )}
               </CardContent>
               <CardFooter>
                   <Button asChild variant="outline" className="w-full">
@@ -98,12 +101,21 @@ export default function HistoryPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h2 className="text-xl font-semibold">No History Found</h2>
-            <p className="text-muted-foreground mt-2 mb-4">You haven't generated any roadmaps yet.</p>
-            <Button asChild>
-                <Link href="/">Start a New Roadmap</Link>
-            </Button>
+         <div className="text-center py-16 border-2 border-dashed rounded-lg">
+            <h2 className="text-xl font-semibold">
+                {searchTerm ? 'No Results Found' : 'No History Found'}
+            </h2>
+            <p className="text-muted-foreground mt-2 mb-4">
+              {searchTerm 
+                ? "No roadmaps match your search criteria."
+                : "You haven't generated any roadmaps yet."
+              }
+            </p>
+            {!searchTerm && (
+                <Button asChild>
+                    <Link href="/">Start a New Roadmap</Link>
+                </Button>
+            )}
         </div>
       )}
     </div>

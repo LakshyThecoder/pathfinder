@@ -86,7 +86,12 @@ export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapContro
                         <Tooltip key={control.label}>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={control.action}>
-                                    <control.icon className={cn("h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors", isSaved && control.label === 'Save' && "text-primary fill-primary")} />
+                                    <control.icon className={cn(
+                                        "h-5 w-5 transition-colors",
+                                        control.label === 'Save' && isSaved
+                                            ? "text-primary fill-primary group-hover:fill-primary/80"
+                                            : "text-muted-foreground group-hover:text-foreground"
+                                    )} />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
