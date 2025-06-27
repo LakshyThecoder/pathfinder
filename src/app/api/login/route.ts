@@ -9,9 +9,19 @@ export async function POST(request: NextRequest) {
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
     if (!auth.createSessionCookie) {
+        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        const consoleUrl = projectId 
+            ? `https://console.firebase.google.com/project/${projectId}/settings/serviceaccounts/adminsdk` 
+            : 'https://console.firebase.google.com/';
+
         const errorMessage = "Firebase Admin SDK is not configured. Server-side authentication cannot be completed. Please ensure FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY are set in your environment variables.";
-        console.error(errorMessage);
-        return NextResponse.json({ status: 'error', message: errorMessage }, { status: 503 });
+        
+        return NextResponse.json({ 
+            status: 'error', 
+            message: errorMessage,
+            url: consoleUrl,
+            urlText: "Go to Firebase Project Settings"
+        }, { status: 503 });
     }
 
     try {

@@ -33,12 +33,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
 
             if (!response.ok) {
-                // If the server returns an error, show a toast to the user.
                 const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred during login.' }));
                 toast({
                     variant: "destructive",
                     title: "Server Authentication Failed",
-                    description: errorData.message || "Could not create a secure session. Please check server configuration.",
+                    description: (
+                      <div>
+                        <p>{errorData.message || "Could not create a secure session."}</p>
+                        {errorData.url && (
+                           <a href={errorData.url} target="_blank" rel="noopener noreferrer" className="underline mt-2 inline-block font-semibold">
+                            {errorData.urlText || "Click here for more info"}
+                          </a>
+                        )}
+                      </div>
+                    )
                 });
             }
         } catch (e) {
