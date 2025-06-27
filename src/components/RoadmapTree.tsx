@@ -32,19 +32,12 @@ export default function RoadmapTree({ data, onNodeSelect, selectedNodeId }: Road
         'Advanced': [],
     };
 
-    const categorizeNodes = (nodes: RoadmapNodeData[]) => {
-        nodes.forEach(node => {
-            if (levels[node.level]) {
-                levels[node.level].push(node);
-            }
-            if (node.children) {
-                categorizeNodes(node.children);
-            }
-        })
-    }
-    
     if (data.children) {
-        categorizeNodes(data.children);
+      data.children.forEach(node => {
+        if (levels[node.level]) {
+          levels[node.level].push(node);
+        }
+      });
     }
     
     const filledLevels = Object.entries(levels).filter(([, nodes]) => nodes.length > 0);
