@@ -1,116 +1,87 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RoadmapNodeData, NodeStatus } from '@/types';
 import RoadmapTree from './RoadmapTree';
 import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
 import RoadmapProgress from './RoadmapProgress';
-import { getAiRoadmap } from '@/app/actions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import PageLoading from '@/components/PageLoading';
 
-function RoadmapLoading() {
-  const loadingMessages = [
-    "Consulting with AI experts...",
-    "Drawing the map to your success...",
-    "Assembling the building blocks of knowledge...",
-    "Plotting the course for your adventure...",
-    "Turning your goal into a grand plan...",
-  ];
-  const [message, setMessage] = useState(loadingMessages[0]);
+const ROADMAP_DATA_PREFIX = 'roadmap-';
+const ROADMAP_STATUS_PREFIX = 'roadmap-status-';
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setMessage(prevMessage => {
-        const currentIndex = loadingMessages.indexOf(prevMessage);
-        const nextIndex = (currentIndex + 1) % loadingMessages.length;
-        return loadingMessages[nextIndex];
-      });
-    }, 2500);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  return (
-    <div className="p-8 w-full h-full flex flex-col items-center justify-center">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">Generating Your AI-Powered Roadmap...</h1>
-        <p className="text-muted-foreground h-5">{message}</p>
-      </div>
-      <div className="p-8 w-full max-w-5xl">
-        <Skeleton className="h-12 w-1/2 mx-auto mb-16" />
-        <div className="flex justify-center items-start gap-16 lg:gap-24 px-4">
-          <div className="flex flex-col items-center gap-8 min-w-[250px] w-full">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-          <div className="hidden md:flex flex-col items-center gap-8 min-w-[250px] w-full">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-          <div className="hidden lg:flex flex-col items-center gap-8 min-w-[250px] w-full">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function RoadmapView({ query }: { query?: string }) {
+export default function RoadmapView({ roadmapId }: { roadmapId?: string }) {
   const [roadmapData, setRoadmapData] = useState<RoadmapNodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
-
   useEffect(() => {
-    async function fetchRoadmap() {
-      if (!query) {
-        router.push('/');
-        return;
-      }
-      
-      setIsLoading(true);
-      const result = await getAiRoadmap(query);
-      setIsLoading(false);
+    if (typeof window === 'undefined') return;
 
-      if ('error' in result) {
+    if (!roadmapId) {
+      toast({
+        title: 'No Roadmap ID',
+        description: 'Please generate a roadmap from the home page.',
+        variant: 'destructive'
+      })
+      router.push('/');
+      return;
+    }
+    
+    setIsLoading(true);
+
+    const storedData = localStorage.getItem(`${ROADMAP_DATA_PREFIX}${roadmapId}`);
+    if (storedData) {
+      try {
+        const data = JSON.parse(storedData);
+        setRoadmapData(data);
+        
+        const storedStatuses = localStorage.getItem(`${ROADMAP_STATUS_PREFIX}${roadmapId}`);
+        if (storedStatuses) {
+          setNodeStatuses(JSON.parse(storedStatuses));
+        }
+      } catch (e) {
         toast({
           variant: 'destructive',
           title: 'Error Loading Roadmap',
-          description: result.error,
+          description: 'Could not parse roadmap data. The data may be corrupt.',
         });
         router.push('/');
-      } else {
-        setRoadmapData(result);
-        setNodeStatuses({});
       }
+    } else {
+        toast({
+          variant: 'destructive',
+          title: 'Roadmap Not Found',
+          description: 'This roadmap does not exist in your browser storage. It may have been cleared.',
+        });
+        router.push('/');
     }
-    fetchRoadmap();
-  }, [query, router, toast]);
 
+    setIsLoading(false);
+  }, [roadmapId, router, toast]);
+
+  const handleStatusChange = useCallback((nodeId: string, status: NodeStatus) => {
+    const newStatuses = {
+      ...nodeStatuses,
+      [nodeId]: status,
+    };
+    setNodeStatuses(newStatuses);
+    if (roadmapId) {
+        localStorage.setItem(`${ROADMAP_STATUS_PREFIX}${roadmapId}`, JSON.stringify(newStatuses));
+    }
+  }, [nodeStatuses, roadmapId]);
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
     setSelectedNode(node);
     setChatbotOpen(true);
-  };
-
-  const handleStatusChange = (nodeId: string, status: NodeStatus) => {
-    setNodeStatuses(prev => ({
-      ...prev,
-      [nodeId]: status,
-    }));
   };
 
   const { completedNodes, totalNodes, skippedNodes } = useMemo(() => {
@@ -122,9 +93,8 @@ export default function RoadmapView({ query }: { query?: string }) {
     };
   }, [nodeStatuses, roadmapData]);
 
-
   if (isLoading || !roadmapData) {
-    return <RoadmapLoading />;
+    return <PageLoading message="Loading your roadmap..." />;
   }
   
   return (

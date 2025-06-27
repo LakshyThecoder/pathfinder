@@ -7,27 +7,54 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAiRoadmap } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [goal, setGoal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
+
+  const handleGeneration = async (topic: string) => {
+    if (isLoading || !topic.trim()) {
+      return;
+    }
+    setIsLoading(true);
+
+    const result = await getAiRoadmap(topic.trim());
+
+    if ("error" in result) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Generating Roadmap',
+        description: result.error,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const newId = crypto.randomUUID();
+      localStorage.setItem(`roadmap-${newId}`, JSON.stringify(result));
+      router.push(`/roadmap?id=${newId}`);
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not save roadmap',
+        description: 'There was an error saving the roadmap to your browser storage. It might be full.',
+      });
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isLoading || !goal.trim()) {
-      return;
-    }
-    setIsLoading(true);
-    router.push(`/roadmap?query=${encodeURIComponent(goal.trim())}`);
+    handleGeneration(goal);
   };
 
   const handleCardClick = (name: string) => {
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    router.push(`/roadmap?query=${encodeURIComponent(name)}`);
+    handleGeneration(name);
   };
 
   const trendingTopics = [
