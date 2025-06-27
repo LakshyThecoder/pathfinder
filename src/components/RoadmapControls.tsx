@@ -1,24 +1,18 @@
 "use client";
 
-import { Share2, Bookmark, Star, Download, BookmarkPlus } from 'lucide-react';
+import { Share2, Star, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useCallback, useState } from 'react';
-import LoginPromptDialog from './LoginPromptDialog';
-import { cn } from '@/lib/utils';
+import { useCallback } from 'react';
 
 interface RoadmapControlsProps {
     roadmapTitle: string;
-    isSaved: boolean;
 }
 
-export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapControlsProps) {
-    const { user } = useAuth();
+export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) {
     const { toast } = useToast();
-    const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
 
     const handleShare = useCallback(() => {
         navigator.clipboard.writeText(window.location.href);
@@ -27,17 +21,6 @@ export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapContro
             description: 'Roadmap link has been copied to your clipboard.',
         });
     }, [toast]);
-
-    const handleSave = useCallback(() => {
-        if (!user) {
-            setLoginDialogOpen(true);
-        } else {
-             toast({
-                title: isSaved ? 'Roadmap Already Saved' : 'Roadmap Saved!',
-                description: isSaved ? 'This roadmap is in your history.' : 'You can find it in your history.',
-            });
-        }
-    }, [user, toast, isSaved]);
 
     const handleRate = useCallback(() => {
         toast({
@@ -73,7 +56,6 @@ export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapContro
 
     const controls = [
         { label: 'Share', icon: Share2, action: handleShare },
-        { label: 'Save', icon: isSaved ? Bookmark : BookmarkPlus, action: handleSave },
         { label: 'Rate', icon: Star, action: handleRate },
         { label: 'Download', icon: Download, action: handleDownload },
     ];
@@ -86,12 +68,7 @@ export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapContro
                         <Tooltip key={control.label}>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={control.action}>
-                                    <control.icon className={cn(
-                                        "h-5 w-5 transition-colors",
-                                        control.label === 'Save' && isSaved
-                                            ? "text-primary fill-primary group-hover:fill-primary/80"
-                                            : "text-muted-foreground group-hover:text-foreground"
-                                    )} />
+                                    <control.icon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -101,7 +78,6 @@ export default function RoadmapControls({ roadmapTitle, isSaved }: RoadmapContro
                     ))}
                 </div>
             </div>
-            <LoginPromptDialog isOpen={isLoginDialogOpen} onOpenChange={setLoginDialogOpen} />
         </TooltipProvider>
     );
 }

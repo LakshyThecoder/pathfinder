@@ -12,6 +12,8 @@ import { getHistoryAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
 import PageLoading from '@/components/PageLoading';
 
+export const dynamic = 'force-dynamic';
+
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
   const [history, setHistory] = useState<StoredRoadmap[]>([]);

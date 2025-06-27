@@ -111,7 +111,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
       } else {
         setRoadmapData(result);
         setNodeStatuses(result.nodeStatuses || {});
-        // If it was a new roadmap, update URL with its new ID
+        // If it was a new roadmap, update URL with its new ID if it was saved
         if (!roadmapId && result.id && result.userId) {
           router.replace(`/roadmap?id=${result.id}`, { scroll: false });
         }
@@ -167,7 +167,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         completedNodes={completedNodes}
         skippedNodes={skippedNodes}
       />
-      <RoadmapControls roadmapTitle={roadmapData.title} isSaved={!!roadmapData.userId} />
+      <RoadmapControls roadmapTitle={roadmapData.title} />
       <Chatbot 
         isOpen={isChatbotOpen} 
         onOpenChange={setChatbotOpen} 
