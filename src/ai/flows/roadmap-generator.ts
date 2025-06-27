@@ -13,7 +13,7 @@ import {z} from 'genkit';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoadmapNodeData } from '@/types';
 
-export const GenerateRoadmapInputSchema = z.object({
+const GenerateRoadmapInputSchema = z.object({
   query: z.string().describe('The topic for which to generate a learning roadmap.'),
 });
 export type GenerateRoadmapInput = z.infer<typeof GenerateRoadmapInputSchema>;
