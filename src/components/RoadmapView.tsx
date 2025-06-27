@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -78,6 +79,13 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   useEffect(() => {
     // Wait for auth to finish loading before doing anything
     if (authLoading) {
+      return;
+    }
+
+    // If generating a new roadmap via query, we must have a user object.
+    // This prevents a race condition on page load where the query exists
+    // but the user context hasn't been populated yet.
+    if (query && !user) {
       return;
     }
 
