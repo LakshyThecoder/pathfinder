@@ -4,43 +4,40 @@ import type { App } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin';
 import { cookies } from 'next/headers';
 
-// This function ensures that the Firebase Admin SDK is initialized only once.
+let adminApp: App | undefined;
+
 function initializeAdminApp(): App {
-  // Check if an app is already initialized, and return it.
+  // Check if we've already initialized the app
   if (admin.apps.length > 0) {
-    // This is safe to do, as admin.app() will throw if no app is initialized.
     return admin.app();
   }
 
-  // If not initialized, create the service account object from environment variables.
-  const serviceAccount: ServiceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    // The private key from the environment variable needs to have its newlines restored.
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  };
+  const encodedServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
 
-  // Validate that all required service account properties are present.
-  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-    throw new Error('Firebase Admin SDK environment variables are not set correctly. Please check your .env.local file.');
+  if (!encodedServiceAccount) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable is not set. Please check your .env.local file.');
   }
-  
-  // Initialize the app with the credentials.
+
   try {
-    return admin.initializeApp({
+    const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf-8');
+    const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
+
+    const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    
+    return app;
+
   } catch (error: any) {
     console.error('Firebase Admin SDK Initialization Error:', error.message);
-    // Provide a more specific error message to help with debugging.
-    throw new Error(`Could not initialize Firebase Admin SDK. The credential might be malformed. Error: ${error.message}`);
+    throw new Error('Could not initialize Firebase Admin SDK. The service account JSON may be malformed or invalid. Please check your .env.local file.');
   }
-};
+}
 
 // Initialize the app and export the auth and db instances.
-const adminApp = initializeAdminApp();
-const auth = admin.auth(adminApp);
-const db = admin.firestore(adminApp);
+const appInstance = initializeAdminApp();
+const auth = admin.auth(appInstance);
+const db = admin.firestore(appInstance);
 
 // Session helper function to decode the session cookie.
 async function getDecodedIdToken() {

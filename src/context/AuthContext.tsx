@@ -35,9 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
 
           if (!response.ok) {
-            // The server failed to create a session cookie.
-            // This is a critical error, so we sign the user out on the client
-            // to keep the states consistent.
             console.error('Failed to create server session, signing out.');
             toast({
               variant: 'destructive',
@@ -65,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [toast, user]);
+  }, [toast]); // removed `user` from dependency array to prevent re-running on user state change within the effect itself.
 
   const logout = async () => {
     await firebaseSignOut(auth);
