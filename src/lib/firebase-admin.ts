@@ -1,45 +1,60 @@
 'use server';
 import admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
-import type { ServiceAccount } from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 
-let adminApp: App | undefined;
+// Define a type for the global object to avoid TypeScript errors
+declare global {
+  var _firebaseAdminApp: App | undefined;
+}
 
 function initializeAdminApp(): App {
-  // Check if we've already initialized the app
-  if (admin.apps.length > 0) {
-    return admin.app();
+  // Use a global variable to store the app instance in development to prevent re-initialization on hot reloads.
+  if (process.env.NODE_ENV === 'development' && global._firebaseAdminApp) {
+    return global._firebaseAdminApp;
   }
 
+  // Check the official admin.apps array which is the recommended way for production.
+  if (admin.apps.length > 0) {
+    return admin.apps[0] as App;
+  }
+  
   const encodedServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
-
+  
   if (!encodedServiceAccount) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable is not set. Please check your .env.local file.');
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable is not set. The server cannot start without it. Check your .env.local file.');
   }
 
   try {
     const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf-8');
-    const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
+    const serviceAccount = JSON.parse(serviceAccountJson);
 
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+
+    // Store the initialized app on the global object in development.
+    if (process.env.NODE_ENV === 'development') {
+      global._firebaseAdminApp = app;
+    }
     
     return app;
 
   } catch (error: any) {
-    console.error('Firebase Admin SDK Initialization Error:', error.message);
-    throw new Error('Could not initialize Firebase Admin SDK. The service account JSON may be malformed or invalid. Please check your .env.local file.');
+    console.error('CRITICAL: Firebase Admin SDK Initialization Failed.', error);
+    if (error.code === 'ERR_INVALID_ARG_TYPE' || error.message.includes('malformed')) {
+        throw new Error('Could not initialize Firebase Admin SDK. The service account JSON is likely malformed or missing required fields. Please verify the content of your FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 variable in .env.local.');
+    }
+    throw new Error(`Could not initialize Firebase Admin SDK. A critical error occurred: ${error.message}`);
   }
 }
 
-// Initialize the app and export the auth and db instances.
 const appInstance = initializeAdminApp();
-const auth = admin.auth(appInstance);
-const db = admin.firestore(appInstance);
+const auth = getAuth(appInstance);
+const db = getFirestore(appInstance);
 
-// Session helper function to decode the session cookie.
 async function getDecodedIdToken() {
   const sessionCookie = cookies().get('firebase-session')?.value;
   if (!sessionCookie) return null;
@@ -53,7 +68,6 @@ async function getDecodedIdToken() {
   }
 }
 
-// Export the initialized instances and the session helper.
 export { auth, db };
 
 export const session = {
