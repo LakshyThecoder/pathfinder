@@ -3,36 +3,17 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, History as HistoryIcon, Lock } from "lucide-react";
+import { Search, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import AuthWall from "@/components/AuthWall";
 
 const dummyHistory = [
   { id: 1, title: "My UI/UX Journey", query: "UI/UX Design", date: "2023-10-26" },
   { id: 2, title: "Python for Data Science", query: "Python", date: "2023-10-22" },
   { id: 3, title: "Startup Basics", query: "Entrepreneurship", date: "2023-10-20" },
 ];
-
-function AuthWall() {
-  return (
-    <div className="w-full text-center py-16 flex flex-col items-center">
-      <Lock className="h-16 w-16 text-primary mb-4" />
-      <h2 className="text-2xl font-bold mb-2">Unlock Your History</h2>
-      <p className="text-muted-foreground mb-6 max-w-md">
-        Please log in or create an account to save and view your roadmap history. Your learning journeys will be waiting for you here.
-      </p>
-      <div className="flex gap-4">
-        <Button asChild>
-          <Link href="/login">Login</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/signup">Sign Up</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 function HistoryLoading() {
   return (
@@ -81,7 +62,10 @@ export default function HistoryPage() {
   if (!user) {
     return (
       <div className="container mx-auto py-10 px-4">
-        <AuthWall />
+        <AuthWall 
+            title="Unlock Your History"
+            description="Please log in or create an account to save and view your roadmap history. Your learning journeys will be waiting for you here."
+        />
       </div>
     );
   }
