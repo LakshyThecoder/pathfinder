@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
       setUser(newUser);
-      setLoading(false);
 
       try {
         if (newUser) {
@@ -53,15 +52,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           title: 'Authentication Error',
           description: 'Your session could not be synchronized with the server. Please try signing in again.',
         });
-        // Force a sign out on the client to avoid being in a broken state.
-        if (user) {
-          await firebaseSignOut(auth);
-        }
+        // Since we don't know the state, force a sign-out to be safe
+        await firebaseSignOut(auth);
+      } finally {
+        // This ensures loading is false only after the initial user check AND
+        // the server session sync attempt has completed.
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [toast]); // removed `user` from dependency array to prevent re-running on user state change within the effect itself.
+  }, [toast]);
 
   const logout = async () => {
     await firebaseSignOut(auth);

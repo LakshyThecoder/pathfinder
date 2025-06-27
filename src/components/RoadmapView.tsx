@@ -70,14 +70,16 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
 
   useEffect(() => {
-    // A user must be logged in to view this page. If auth is loading, wait.
-    if (user === undefined) return;
+    // Wait for auth to finish loading before doing anything
+    if (authLoading) {
+      return;
+    }
 
     // Reset state on new query or id
     setRoadmapData(null);
@@ -122,7 +124,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
     }
 
     fetchRoadmap();
-  }, [query, roadmapId, toast, router, user]);
+  }, [query, roadmapId, toast, router, user, authLoading]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
@@ -147,7 +149,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   }, [nodeStatuses, roadmapData]);
 
 
-  if (isLoading || !roadmapData) {
+  if (authLoading || isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
   
