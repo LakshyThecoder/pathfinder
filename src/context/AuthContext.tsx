@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -9,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  sessionReady: boolean;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
@@ -19,15 +19,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
+      setLoading(true); // Always start in a loading state on any auth change.
       setUser(newUser);
-      setSessionReady(false); // Always reset session readiness on auth change.
-      setLoading(true); // Always enter loading state on auth change.
 
       if (newUser) {
         // User is logging in or session is being refreshed.
@@ -38,9 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             headers: { 'Authorization': `Bearer ${token}` },
           });
 
-          if (response.ok) {
-            setSessionReady(true); // Server session is established.
-          } else {
+          if (!response.ok) {
             // Failed to create server session. This is a critical error.
             toast({
               variant: 'destructive',
@@ -48,8 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               description: 'Could not synchronize your session. Please try logging in again.'
             });
             await firebaseSignOut(auth); // Sign out to prevent inconsistent state.
-            setUser(null);
-            setSessionReady(false);
           }
         } catch (error) {
           console.error("Auth session sync error:", error);
@@ -59,16 +53,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             description: 'Your session could not be synchronized with the server.',
           });
           await firebaseSignOut(auth);
-          setUser(null);
-          setSessionReady(false);
         } finally {
-          setLoading(false); // Auth flow for this user is complete.
+          // Whether sync succeeded or failed, the auth flow is now complete.
+          setLoading(false);
         }
       } else {
-        // User is null, they are logged out.
+        // User is null, they are logged out or session expired.
+        // Ensure the server-side cookie is cleared.
         await fetch('/api/logout', { method: 'POST' });
-        setSessionReady(false);
-        setLoading(false); // Auth flow is complete (user is confirmed null).
+        // The auth flow is complete (user is confirmed null).
+        setLoading(false);
       }
     });
 
@@ -101,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     user,
     loading,
-    sessionReady,
     logout,
     signInWithGoogle,
   };
