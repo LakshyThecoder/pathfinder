@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const FollowUpInputSchema = z.object({
+const FollowUpInputSchema = z.object({
   nodeContent: z
     .string()
     .describe('The content or topic of the roadmap node being discussed.'),
@@ -19,7 +19,7 @@ export const FollowUpInputSchema = z.object({
 });
 export type FollowUpInput = z.infer<typeof FollowUpInputSchema>;
 
-export const FollowUpOutputSchema = z.object({
+const FollowUpOutputSchema = z.object({
   answer: z
     .string()
     .describe("A helpful and concise answer to the user's question."),
