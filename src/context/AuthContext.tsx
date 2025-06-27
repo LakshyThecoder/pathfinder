@@ -38,7 +38,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // The server failed to create a session cookie.
             // This is a critical error, so we sign the user out on the client
             // to keep the states consistent.
-            throw new Error('Failed to create a server session.');
+            console.error('Failed to create server session, signing out.');
+            toast({
+              variant: 'destructive',
+              title: 'Session Error',
+              description: 'Could not create a server session. Please try logging in again.'
+            });
+            await firebaseSignOut(auth);
           }
         } else {
           // User is logged out, so clear the server session.
