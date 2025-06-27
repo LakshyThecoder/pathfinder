@@ -41,7 +41,7 @@ type AiOutput = z.infer<typeof GenerateRoadmapAIOutputSchema>;
 export async function generateRoadmap(input: GenerateRoadmapInput): Promise<GenerateRoadmapOutput> {
     const roadmapFromAI = await roadmapGeneratorFlow(input);
 
-    if (!roadmapFromAI || !roadmapFromAI.title || !roadmapFromAI.children) {
+    if (!roadmapFromAI || !roadmapFromAI.title || !roadmapFromAI.children || roadmapFromAI.children.length === 0) {
       throw new Error("AI failed to generate a valid roadmap structure. The response was empty or malformed.");
     }
 
@@ -61,6 +61,7 @@ export async function generateRoadmap(input: GenerateRoadmapInput): Promise<Gene
 
 const prompt = ai.definePrompt({
     name: 'roadmapGeneratorPrompt',
+    model: 'gemini-pro',
     input: {schema: GenerateRoadmapInputSchema},
     output: { schema: GenerateRoadmapAIOutputSchema },
     prompt: `You are an expert curriculum designer. Your task is to generate a high-level learning roadmap for "{{query}}".
