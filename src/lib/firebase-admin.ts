@@ -1,22 +1,24 @@
 import * as admin from 'firebase-admin';
+import { ServiceAccount } from 'firebase-admin';
 import { cookies } from 'next/headers';
 
-// This configuration is now robust. If the environment variables are missing,
-// the server will fail to start with a clear error message, preventing runtime issues.
 if (!admin.apps.length) {
+    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
+
+    if (!serviceAccountBase64) {
+        throw new Error('Firebase service account key is not set in .env.local. Please set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64.');
+    }
+
     try {
+        const decodedServiceAccount = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
+        const serviceAccount = JSON.parse(decodedServiceAccount) as ServiceAccount;
+        
         admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Replace escaped newlines for the private key
-                privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-            }),
+            credential: admin.credential.cert(serviceAccount),
         });
-    } catch (error) {
-        console.error('Firebase Admin SDK Initialization Error:', error);
-        // We throw the error to prevent the app from running in a misconfigured state.
-        throw new Error('Could not initialize Firebase Admin SDK. Please check server logs and .env.local file.');
+    } catch (error: any) {
+        console.error('Firebase Admin SDK Initialization Error:', error.message);
+        throw new Error('Could not initialize Firebase Admin SDK. The service account JSON may be malformed or invalid. Please check your .env.local file.');
     }
 }
 
@@ -35,11 +37,8 @@ async function getDecodedIdToken() {
     }
 }
 
-// Export the initialized admin auth instance.
 export const auth = authAdminInstance;
 
-// Also export the helper function separately.
-// This avoids potential issues with `this` context when spreading the auth object.
 export const session = {
     getDecodedIdToken,
 };
