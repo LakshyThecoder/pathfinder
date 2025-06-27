@@ -40,13 +40,13 @@ async function getDecodedIdToken() {
     if (!session) return null;
 
     // Avoid trying to verify if the SDK is not properly configured
-    if (!admin.apps.length || !admin.apps[0]?.options.credential) {
+    if (!app) {
       console.warn('[Firebase Admin] Cannot verify session cookie because Admin SDK is not configured.');
       return null;
     }
 
     try {
-        const decodedIdToken = await admin.auth().verifySessionCookie(session, true);
+        const decodedIdToken = await admin.auth(app).verifySessionCookie(session, true);
         return decodedIdToken;
     } catch (error) {
         // This is a common error when the app restarts, don't need to be loud
@@ -56,7 +56,10 @@ async function getDecodedIdToken() {
 }
 
 const auth = {
-    ...admin.auth(app),
+    // By checking for `app`, we prevent a crash if the admin SDK is not initialized.
+    // Methods like `createSessionCookie` will be undefined, leading to a runtime error
+    // upon use, which is better than a build-time crash.
+    ...(app ? admin.auth(app) : {}),
     getDecodedIdToken,
 };
 
