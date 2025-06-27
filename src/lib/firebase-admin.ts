@@ -1,5 +1,6 @@
+'use server';
 import * as admin from 'firebase-admin';
-import { ServiceAccount } from 'firebase-admin';
+import type { ServiceAccount } from 'firebase-admin';
 import { cookies } from 'next/headers';
 
 if (!admin.apps.length) {
