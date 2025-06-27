@@ -7,10 +7,9 @@ import RoadmapTree from './RoadmapTree';
 import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
 import RoadmapProgress from './RoadmapProgress';
-import { getAiRoadmap, getStoredRoadmap, saveRoadmapAction } from '@/app/actions';
+import { getAiRoadmap, getStoredRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
-import LoginPromptDialog from './LoginPromptDialog';
 import { useToast } from '@/hooks/use-toast';
 
 function RoadmapLoading() {
@@ -69,9 +68,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   const [roadmapData, setRoadmapData] = useState<StoredRoadmap | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
-  const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
   const { user } = useAuth();
   const { toast } = useToast();
@@ -79,6 +76,9 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
 
 
   useEffect(() => {
+    // A user must be logged in to view this page. If auth is loading, wait.
+    if (user === undefined) return;
+
     // Reset state on new query or id
     setRoadmapData(null);
     setIsLoading(true);
@@ -113,63 +113,21 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         setRoadmapData(result);
         setNodeStatuses(result.nodeStatuses || {});
         
-        // If a new roadmap was generated (with a query) and it was auto-saved (has createdAt),
+        // If a new roadmap was generated (with a query),
         // update the URL to use its persistent ID instead of the query param.
-        if (query && result.createdAt) {
+        if (query && result.id) {
           router.replace(`/roadmap?id=${result.id}`, { scroll: false });
         }
       }
     }
 
     fetchRoadmap();
-  }, [query, roadmapId, toast, router]);
+  }, [query, roadmapId, toast, router, user]);
 
-  const isSaved = !!roadmapData?.createdAt;
-
-  const handleSaveClick = async () => {
-    if (!user) {
-        setLoginDialogOpen(true);
-        return;
-    }
-
-    if (!roadmapData || isSaved) {
-        return; // Don't save if there's no data or it's already saved.
-    }
-    
-    setIsSaving(true);
-    // Combine roadmap data with the latest node statuses for saving
-    const roadmapToSave: StoredRoadmap = {
-        ...roadmapData,
-        nodeStatuses
-    };
-    const result = await saveRoadmapAction(roadmapToSave);
-    setIsSaving(false);
-
-    if ('error' in result) {
-        toast({
-            variant: 'destructive',
-            title: 'Error Saving Roadmap',
-            description: result.error,
-        });
-    } else {
-        toast({
-            title: 'Roadmap Saved!',
-            description: 'Your progress is now stored in your history.',
-        });
-        // Update state with the saved roadmap which now has a real ID and createdAt
-        setRoadmapData(result);
-        // Update the URL to reflect the saved state, removing the query param
-        router.replace(`/roadmap?id=${result.id}`, { scroll: false });
-    }
-  };
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
     setSelectedNode(node);
-    if (!user) {
-      setLoginDialogOpen(true);
-    } else {
-      setChatbotOpen(true);
-    }
+    setChatbotOpen(true);
   };
 
   const handleStatusChange = (nodeId: string, status: NodeStatus) => {
@@ -193,6 +151,9 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
     return <RoadmapLoading />;
   }
   
+  // The user is guaranteed to be logged in and the roadmap to have an ID at this point.
+  const isSaved = !!roadmapData.id;
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div id="roadmap-container" className="h-full w-full bg-background">
@@ -210,9 +171,6 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
       />
       <RoadmapControls 
         roadmapTitle={roadmapData.title}
-        onSaveClick={handleSaveClick}
-        isSaved={isSaved}
-        isSaving={isSaving}
       />
       <Chatbot 
         isOpen={isChatbotOpen} 
@@ -222,7 +180,6 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         currentNodeStatus={selectedNode ? nodeStatuses[selectedNode.id] || 'not-started' : 'not-started'}
         roadmapId={isSaved ? roadmapData.id : undefined}
       />
-      <LoginPromptDialog isOpen={isLoginDialogOpen} onOpenChange={setLoginDialogOpen} />
     </div>
   );
 }

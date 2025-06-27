@@ -1,6 +1,5 @@
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -15,9 +14,11 @@ import { Bot, LogIn, UserPlus } from "lucide-react";
 interface LoginPromptDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
 }
 
-export default function LoginPromptDialog({ isOpen, onOpenChange }: LoginPromptDialogProps) {
+export default function LoginPromptDialog({ isOpen, onOpenChange, title, description }: LoginPromptDialogProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -25,9 +26,9 @@ export default function LoginPromptDialog({ isOpen, onOpenChange }: LoginPromptD
           <div className="mx-auto bg-primary/10 p-3 rounded-full mb-4 w-fit">
             <Bot className="h-8 w-8 text-primary" />
           </div>
-          <AlertDialogTitle className="text-center text-2xl">Unlock AI Insights</AlertDialogTitle>
+          <AlertDialogTitle className="text-center text-2xl">{title || 'Authentication Required'}</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Please log in or create an account to chat with our AI assistant and get personalized insights for your learning journey.
+            {description || 'Please log in or create an account to use this feature.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">

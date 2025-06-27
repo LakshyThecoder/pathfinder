@@ -7,24 +7,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
+import LoginPromptDialog from "@/components/LoginPromptDialog";
 
 export default function Home() {
   const [goal, setGoal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (goal.trim() && !isLoading) {
+    if (isLoading || authLoading || !goal.trim()) {
+      return;
+    }
+
+    if (user) {
       setIsLoading(true);
       router.push(`/roadmap?query=${encodeURIComponent(goal.trim())}`);
+    } else {
+      setLoginDialogOpen(true);
     }
   };
 
   const handleCardClick = (name: string) => {
-    if (!isLoading) {
+    if (isLoading || authLoading) {
+      return;
+    }
+    
+    if (user) {
       setIsLoading(true);
       router.push(`/roadmap?query=${encodeURIComponent(name)}`);
+    } else {
+      setLoginDialogOpen(true);
     }
   };
 
@@ -120,13 +136,13 @@ export default function Home() {
             onChange={(e) => setGoal(e.target.value)}
             className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm"
             aria-label="Learning Goal Input"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           />
-          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || !goal.trim()}>
-            {isLoading ? (
+          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || authLoading || !goal.trim()}>
+            {isLoading || authLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Generating...
+                Please wait...
               </>
             ) : (
               <>
@@ -152,7 +168,7 @@ export default function Home() {
               className="group cursor-pointer bg-card/80 backdrop-blur-sm hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 border-transparent border-2"
               onClick={() => handleCardClick(topic.name)}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick(topic.name)}
-              tabIndex={isLoading ? -1 : 0}
+              tabIndex={isLoading || authLoading ? -1 : 0}
             >
               <CardHeader className="flex flex-col items-center text-center gap-4 pb-2">
                 {topic.icon}
@@ -241,6 +257,12 @@ export default function Home() {
         </div>
       </section>
 
+      <LoginPromptDialog
+        isOpen={isLoginDialogOpen}
+        onOpenChange={setLoginDialogOpen}
+        title="Login to Generate Roadmap"
+        description="Please log in or create an account to generate and automatically save your learning roadmaps."
+      />
     </main>
   );
 }

@@ -1,21 +1,17 @@
 "use client";
 
-import { Share2, Star, Download, Loader2 } from 'lucide-react';
+import { Share2, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCallback } from 'react';
-import { cn } from '@/lib/utils';
 
 interface RoadmapControlsProps {
     roadmapTitle: string;
-    onSaveClick: () => void;
-    isSaved: boolean;
-    isSaving: boolean;
 }
 
-export default function RoadmapControls({ roadmapTitle, onSaveClick, isSaved, isSaving }: RoadmapControlsProps) {
+export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) {
     const { toast } = useToast();
 
     const handleShare = useCallback(() => {
@@ -55,30 +51,6 @@ export default function RoadmapControls({ roadmapTitle, onSaveClick, isSaved, is
         <TooltipProvider>
             <div className="absolute top-6 right-6 z-20">
                 <div className="flex items-center gap-1 p-1 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="rounded-full h-10 w-10 group" 
-                                onClick={onSaveClick}
-                                disabled={isSaving || isSaved}
-                            >
-                                {isSaving ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                ) : (
-                                    <Star className={cn(
-                                        "h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors",
-                                        isSaved && "fill-primary text-primary"
-                                    )} />
-                                )}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{isSaved ? 'Saved' : (isSaving ? 'Saving...' : 'Save Roadmap')}</p>
-                        </TooltipContent>
-                    </Tooltip>
-
                     {/* Share Button */}
                     <Tooltip>
                         <TooltipTrigger asChild>

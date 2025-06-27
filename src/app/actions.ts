@@ -1,11 +1,11 @@
 "use server";
 
 import { roadmapInsightGenerator, RoadmapInsightOutput, RoadmapInsightInput } from "@/ai/flows/roadmap-insight-generator";
-import { generateRoadmap, GenerateRoadmapOutput } from "@/ai/flows/roadmap-generator";
+import { generateRoadmap } from "@/ai/flows/roadmap-generator";
 import { getFollowUpAnswer as getFollowUpAnswerFlow, FollowUpInput, FollowUpOutput } from "@/ai/flows/follow-up-question-generator";
 import { generateDailyChallenge, DailyChallengeOutput } from "@/ai/flows/suggestion-generator";
 import { saveRoadmap as saveRoadmapToDb, getRoadmap as getRoadmapFromDb, getUserRoadmaps, updateNodeStatus as updateNodeStatusInDb, getDashboardStats } from "@/lib/firestore";
-import type { StoredRoadmap, RoadmapNodeData, NodeStatus } from "@/types";
+import type { StoredRoadmap, NodeStatus } from "@/types";
 import { getDecodedIdToken } from "@/lib/firebase-admin";
 
 async function getUserId(): Promise<string | null> {
@@ -28,54 +28,24 @@ export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<Roa
   }
 }
 
-export async function saveRoadmapAction(roadmap: StoredRoadmap): Promise<StoredRoadmap | { error: string }> {
+export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { error: string }> {
     const userId = await getUserId();
     if (!userId) {
-        return { error: 'Your session could not be verified. Please log in again to save your roadmap.' };
+        // This case should ideally not be hit due to client-side checks, but serves as a safeguard.
+        return { error: 'You must be logged in to generate a roadmap.' };
     }
 
-    try {
-        // The roadmap data passed from the client doesn't have the final DB properties yet.
-        const savedRoadmap = await saveRoadmapToDb(userId, roadmap, roadmap.query);
-        // Serialize the roadmap for the client, converting the Timestamp to a string.
-        return {
-            ...savedRoadmap,
-            createdAt: (savedRoadmap.createdAt as any).toDate().toISOString(),
-        } as StoredRoadmap;
-    } catch (e: any) {
-        console.error("Error in saveRoadmapAction:", e);
-        return { error: e.message || 'Failed to save roadmap.' };
-    }
-}
-
-
-export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { error: string }> {
     try {
       // 1. Generate the basic roadmap structure from the AI.
       const generatedRoadmap = await generateRoadmap({ query });
       
-      // 2. Check if the user is logged in.
-      const userId = await getUserId();
+      // 2. Save it to the database immediately.
+      const savedRoadmap = await saveRoadmapToDb(userId, generatedRoadmap, query);
 
-      // 3. If the user is logged in, save it to the database immediately.
-      if (userId) {
-        const savedRoadmap = await saveRoadmapToDb(userId, generatedRoadmap, query);
-        // Serialize the timestamp before sending to the client
-        return {
+      // 3. Serialize the timestamp before sending to the client
+      return {
             ...savedRoadmap,
             createdAt: (savedRoadmap.createdAt as any).toDate().toISOString(),
-        } as StoredRoadmap;
-      }
-
-      // 4. If the user is not logged in, return the unsaved structure.
-      // The client will handle prompting them to log in if they try to save.
-      return {
-        ...(generatedRoadmap as GenerateRoadmapOutput),
-        id: generatedRoadmap.id || `temp-${Date.now()}`,
-        userId: '',
-        query: query,
-        nodeStatuses: {},
-        // No 'createdAt' property, as it has not been saved to the database.
       } as StoredRoadmap;
 
     } catch (e: any) {
