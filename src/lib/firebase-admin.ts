@@ -5,22 +5,16 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 
-// Define a type for the global object to avoid TypeScript errors
-declare global {
-  var _firebaseAdminApp: App | undefined;
-}
-
+/**
+ * Initializes the Firebase Admin SDK, ensuring it's only done once.
+ * This is the recommended pattern for Next.js server environments.
+ */
 function initializeAdminApp(): App {
-  // Use a global variable to store the app instance in development to prevent re-initialization on hot reloads.
-  if (process.env.NODE_ENV === 'development' && global._firebaseAdminApp) {
-    return global._firebaseAdminApp;
-  }
-
-  // Check the official admin.apps array which is the recommended way for production.
+  // Check if an app is already initialized
   if (admin.apps.length > 0) {
     return admin.apps[0] as App;
   }
-  
+
   const encodedServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
   
   if (!encodedServiceAccount) {
@@ -31,16 +25,10 @@ function initializeAdminApp(): App {
     const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(serviceAccountJson);
 
-    const app = admin.initializeApp({
+    // Initialize the app with the credentials
+    return admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-
-    // Store the initialized app on the global object in development.
-    if (process.env.NODE_ENV === 'development') {
-      global._firebaseAdminApp = app;
-    }
-    
-    return app;
 
   } catch (error: any) {
     console.error('CRITICAL: Firebase Admin SDK Initialization Failed.', error);
@@ -51,15 +39,21 @@ function initializeAdminApp(): App {
   }
 }
 
+// Initialize the app and export the authenticated services
 const appInstance = initializeAdminApp();
 const auth = getAuth(appInstance);
 const db = getFirestore(appInstance);
 
+/**
+ * Verifies the session cookie from the incoming request.
+ * @returns The decoded ID token if the session is valid, otherwise null.
+ */
 async function getDecodedIdToken() {
   const sessionCookie = cookies().get('firebase-session')?.value;
   if (!sessionCookie) return null;
 
   try {
+    // Verify the session cookie. This will also check if it's been revoked.
     const decodedIdToken = await auth.verifySessionCookie(sessionCookie, true);
     return decodedIdToken;
   } catch (error) {

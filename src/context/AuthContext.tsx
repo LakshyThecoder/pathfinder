@@ -35,11 +35,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
 
           if (!response.ok) {
-            console.error('Failed to create server session, signing out.');
             toast({
               variant: 'destructive',
               title: 'Session Error',
-              description: 'Could not create a server session. Please try logging in again.'
+              description: 'Could not synchronize your session with the server. Please try logging in again.'
             });
             await firebaseSignOut(auth);
           }
