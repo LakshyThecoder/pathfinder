@@ -41,7 +41,7 @@ const RoadmapNodeForAISchema = z.object({
 const GenerateRoadmapAIOutputSchema = z.object({
     title: z.string().describe('The title for the entire learning roadmap (e.g., "Mastering UI/UX Design").'),
     level: z.enum(['Beginner', 'Intermediate', 'Advanced']).describe("The overall starting level for the roadmap, typically 'Beginner'."),
-    children: z.array(RoadmapNodeForAISchema).describe('A flat list of 5-7 topics for each difficulty level (Beginner, Intermediate, Advanced).')
+    children: z.array(RoadmapNodeForAISchema).describe('A flat list of 3-5 topics for each difficulty level (Beginner, Intermediate, Advanced).')
 });
 
 type AiOutput = z.infer<typeof GenerateRoadmapAIOutputSchema>;
@@ -80,7 +80,7 @@ You must:
 2.  The 'level' for the overall roadmap object should be "Beginner".
 3.  Create a flat list of topics for the 'children' array. This list must contain topics for 'Beginner', 'Intermediate', and 'Advanced' levels.
 4.  For each topic in the 'children' array, you must provide a 'title' (a specific skill or concept) and a 'level' ('Beginner', 'Intermediate', or 'Advanced').
-5.  Ensure there are between 5 and 7 topics for each of the three difficulty levels.`,
+5.  Ensure there are between 3 and 5 topics for each of the three difficulty levels. A smaller number of high-quality topics is better.`,
 });
 
 const roadmapGeneratorFlow = ai.defineFlow(

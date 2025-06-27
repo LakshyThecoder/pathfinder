@@ -7,10 +7,9 @@ import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
 import { getAiRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import LoginPromptDialog from './LoginPromptDialog';
+import { useToast } from '@/hooks/use-toast';
 
 function RoadmapLoading() {
   const loadingMessages = [
@@ -64,49 +63,35 @@ function RoadmapLoading() {
   );
 }
 
-function RoadmapError({ message }: { message: string }) {
-    return (
-        <div className="flex items-center justify-center h-full p-4">
-            <Alert variant="destructive" className="max-w-lg">
-                <Terminal className="h-4 w-4" />
-                <AlertTitle>Error Generating Roadmap</AlertTitle>
-                <AlertDescription>
-                    {message}
-                </AlertDescription>
-            </Alert>
-        </div>
-    )
-}
-
 export default function RoadmapView({ query }: { query: string }) {
   const [roadmapData, setRoadmapData] = useState<RoadmapNodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     setRoadmapData(null);
 
     async function fetchRoadmap() {
       const result = await getAiRoadmap({ query });
       if ('error' in result) {
-        setError(result.error);
+        toast({
+          variant: 'destructive',
+          title: 'Error Generating Roadmap',
+          description: result.error,
+        });
       } else {
         setRoadmapData(result);
       }
-      setLoading(false);
     }
 
     if (query) {
       fetchRoadmap();
     }
-  }, [query]);
+  }, [query, toast]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
@@ -118,16 +103,8 @@ export default function RoadmapView({ query }: { query: string }) {
     }
   };
 
-  if (loading) {
-    return <RoadmapLoading />;
-  }
-
-  if (error) {
-      return <RoadmapError message={error} />
-  }
-
   if (!roadmapData) {
-      return <RoadmapError message="No roadmap data was generated. Please try a different query." />
+    return <RoadmapLoading />;
   }
 
   return (
