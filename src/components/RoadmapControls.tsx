@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCallback, useState } from 'react';
 import LoginPromptDialog from './LoginPromptDialog';
+import { cn } from '@/lib/utils';
 
 interface RoadmapControlsProps {
     roadmapTitle: string;
