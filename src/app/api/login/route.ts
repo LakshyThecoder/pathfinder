@@ -8,23 +8,9 @@ export async function POST(request: NextRequest) {
     const idToken = authorization.split('Bearer ')[1];
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
-    if (!auth.createSessionCookie) {
-        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        const consoleUrl = projectId 
-            ? `https://console.firebase.google.com/project/${projectId}/settings/serviceaccounts/adminsdk` 
-            : 'https://console.firebase.google.com/';
-
-        const errorMessage = "Firebase Admin SDK is not configured. Server-side authentication cannot be completed. Please ensure FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY are set in your environment variables.";
-        
-        return NextResponse.json({ 
-            status: 'error', 
-            message: errorMessage,
-            url: consoleUrl,
-            urlText: "Go to Firebase Project Settings"
-        }, { status: 503 });
-    }
-
     try {
+      // The `auth` object from firebase-admin is the fully initialized admin auth instance.
+      // If it failed to initialize, the server would not have started.
       const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
       cookies().set('firebase-session', sessionCookie, {
         maxAge: expiresIn,
@@ -35,8 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'success' });
     } catch (error) {
       console.error('Error creating session cookie:', error);
-      return NextResponse.json({ status: 'error' }, { status: 401 });
+      // This will catch issues like invalid ID tokens.
+      return NextResponse.json({ status: 'error', message: 'Failed to create session.' }, { status: 401 });
     }
   }
-  return NextResponse.json({ status: 'error' }, { status: 400 });
+  return NextResponse.json({ status: 'error', message: 'Invalid authorization header.' }, { status: 400 });
 }
