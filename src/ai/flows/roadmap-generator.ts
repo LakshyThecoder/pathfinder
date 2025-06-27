@@ -67,16 +67,16 @@ const prompt = ai.definePrompt({
     name: 'roadmapGeneratorPrompt',
     input: {schema: GenerateRoadmapInputSchema},
     output: { schema: GenerateRoadmapAIOutputSchema },
-    prompt: `You are an expert curriculum designer. Your task is to generate a structured, high-level learning roadmap for the given topic.
+    prompt: `You are an expert curriculum designer. Your task is to generate a high-level learning roadmap for "{{query}}".
 
-    The user wants to learn: {{{query}}}
-    
-    1.  Create a clear, engaging title for the overall roadmap.
-    2.  Provide a list of learning topics broken down into three difficulty levels: 'Beginner', 'Intermediate', and 'Advanced'.
-    3.  For each difficulty level, list 5-7 core topics.
-    4.  The output for the 'children' field must be a single flat array containing all topics from all difficulty levels. Do NOT nest topics.
-    
-    The final output must be a single JSON object that strictly adheres to the provided schema.`,
+Your response MUST be a JSON object that matches the requested schema precisely.
+
+You must:
+1.  Create an engaging 'title' for the entire roadmap. For example, "The Complete Guide to {{query}}".
+2.  The 'level' for the overall roadmap object should be "Beginner".
+3.  Create a flat list of topics for the 'children' array. This list must contain topics for 'Beginner', 'Intermediate', and 'Advanced' levels.
+4.  For each topic in the 'children' array, you must provide a 'title' (a specific skill or concept) and a 'level' ('Beginner', 'Intermediate', or 'Advanced').
+5.  Ensure there are between 5 and 7 topics for each of the three difficulty levels.`,
 });
 
 const roadmapGeneratorFlow = ai.defineFlow(
