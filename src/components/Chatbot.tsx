@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useTransition, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import type { RoadmapNodeData } from "@/types";
+import type { RoadmapNodeData, NodeStatus } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getRoadmapInsight, getFollowUpAnswer } from "@/app/actions";
 import type { RoadmapInsightOutput } from "@/ai/flows/roadmap-insight-generator";
-import { CornerDownLeft, Bot, User } from "lucide-react";
+import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -19,7 +19,8 @@ interface ChatbotProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   selectedNode: RoadmapNodeData | null;
-  query: string;
+  onStatusChange: (nodeId: string, status: NodeStatus) => void;
+  currentNodeStatus: NodeStatus;
 }
 
 type Message = {
@@ -64,7 +65,7 @@ const InitialInsight = ({ insight }: { insight: RoadmapInsightOutput }) => (
   </div>
 );
 
-export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotProps) {
+export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusChange, currentNodeStatus }: ChatbotProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -99,7 +100,6 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
   }, [selectedNode, isOpen, toast]);
   
   useEffect(() => {
-    // Scroll to bottom when new messages are added
     const viewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
     if (viewport) {
       viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
@@ -126,6 +126,19 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
     });
   };
 
+  const handleStatusClick = (status: NodeStatus) => {
+    if (selectedNode) {
+        onStatusChange(selectedNode.id, status);
+    }
+  };
+
+  const statusActions = [
+    { status: 'completed' as NodeStatus, label: 'Complete', icon: Check, className: 'hover:bg-green-500/20 text-green-500' },
+    { status: 'in-progress' as NodeStatus, label: 'In Progress', icon: CircleDashed, className: 'hover:bg-blue-500/20 text-blue-500' },
+    { status: 'skipped' as NodeStatus, label: 'Skip', icon: X, className: 'hover:bg-muted-foreground/20 text-muted-foreground' },
+    { status: 'not-started' as NodeStatus, label: 'Reset', icon: RotateCcw, className: 'hover:bg-amber-500/20 text-amber-500' },
+  ];
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent side={isMobile ? "bottom" : "right"} className="w-full md:max-w-md lg:max-w-lg p-0 flex flex-col" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -137,6 +150,28 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
           </SheetDescription>
           }
         </SheetHeader>
+
+        {selectedNode && (
+            <div className="px-6 py-3 border-b">
+                <p className="text-sm font-medium mb-2 text-muted-foreground">Update Progress:</p>
+                <div className="flex items-center justify-around gap-2">
+                    {statusActions.map(action => (
+                        <Button
+                            key={action.status}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusClick(action.status)}
+                            className={cn('flex-1 text-xs gap-1.5', action.className, currentNodeStatus === action.status && 'bg-accent')}
+                            title={action.label}
+                        >
+                            <action.icon className="h-4 w-4" />
+                            {action.label}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+        )}
+
         <ScrollArea className="flex-1" ref={scrollAreaRef}>
             <div className="p-6 space-y-6">
                 <AnimatePresence>

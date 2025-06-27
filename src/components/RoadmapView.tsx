@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import type { RoadmapNodeData } from '@/types';
+import { useState, useEffect, useMemo } from 'react';
+import type { RoadmapNodeData, NodeStatus } from '@/types';
 import RoadmapTree from './RoadmapTree';
 import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
+import RoadmapProgress from './RoadmapProgress';
 import { getAiRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
@@ -69,6 +70,7 @@ export default function RoadmapView({ query }: { query: string }) {
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -76,6 +78,7 @@ export default function RoadmapView({ query }: { query: string }) {
   useEffect(() => {
     setRoadmapData(null);
     setIsLoading(true);
+    setNodeStatuses({});
 
     async function fetchRoadmap() {
       const result = await getAiRoadmap({ query });
@@ -106,6 +109,23 @@ export default function RoadmapView({ query }: { query: string }) {
     }
   };
 
+  const handleStatusChange = (nodeId: string, status: NodeStatus) => {
+    setNodeStatuses(prev => ({
+      ...prev,
+      [nodeId]: status,
+    }));
+  };
+
+  const { completedNodes, totalNodes, skippedNodes } = useMemo(() => {
+    const statuses = Object.values(nodeStatuses);
+    return {
+      completedNodes: statuses.filter(s => s === 'completed').length,
+      totalNodes: roadmapData?.children?.length ?? 0,
+      skippedNodes: statuses.filter(s => s === 'skipped').length,
+    };
+  }, [nodeStatuses, roadmapData]);
+
+
   if (isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
@@ -113,14 +133,25 @@ export default function RoadmapView({ query }: { query: string }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div id="roadmap-container" className="h-full w-full bg-background">
-        <RoadmapTree data={roadmapData} onNodeSelect={handleNodeSelect} selectedNodeId={selectedNode?.id} />
+        <RoadmapTree
+          data={roadmapData}
+          onNodeSelect={handleNodeSelect}
+          selectedNodeId={selectedNode?.id}
+          nodeStatuses={nodeStatuses}
+        />
       </div>
+      <RoadmapProgress 
+        totalNodes={totalNodes}
+        completedNodes={completedNodes}
+        skippedNodes={skippedNodes}
+      />
       <RoadmapControls query={query} roadmapTitle={roadmapData.title} />
       <Chatbot 
         isOpen={isChatbotOpen} 
         onOpenChange={setChatbotOpen} 
         selectedNode={selectedNode}
-        query={query}
+        onStatusChange={handleStatusChange}
+        currentNodeStatus={selectedNode ? nodeStatuses[selectedNode.id] || 'not-started' : 'not-started'}
       />
       <LoginPromptDialog isOpen={isLoginDialogOpen} onOpenChange={setLoginDialogOpen} />
     </div>
