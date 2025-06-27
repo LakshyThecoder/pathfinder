@@ -5,9 +5,13 @@ import { GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import UserNav from "./UserNav";
+import { Skeleton } from "./ui/skeleton";
 
 export default function Header() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -36,8 +40,23 @@ export default function Header() {
         ))}
       </nav>
       <div className="flex items-center gap-4 ml-auto">
-        <Button variant="ghost">Login</Button>
-        <Button>Sign Up</Button>
+        {loading ? (
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+          </div>
+        ) : user ? (
+          <UserNav />
+        ) : (
+          <>
+            <Button variant="ghost" asChild>
+              <Link href="/login">Login</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/signup">Sign Up</Link>
+            </Button>
+          </>
+        )}
       </div>
     </header>
   );

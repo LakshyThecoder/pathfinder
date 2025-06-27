@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play } from "lucide-react";
+import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   const [goal, setGoal] = useState("");
@@ -62,6 +63,30 @@ export default function Home() {
       title: "3. Start Learning",
       description: "Follow the path, track your progress, and dive into curated resources to achieve mastery."
     }
+  ];
+
+  const testimonials = [
+    {
+      name: "Alex Johnson",
+      role: "Software Engineer",
+      avatar: "https://placehold.co/100x100.png",
+      dataAiHint: "man portrait",
+      text: "PathFinder completely changed how I approach learning new technologies. The visual roadmaps are a game-changer for understanding the big picture.",
+    },
+    {
+      name: "Samantha Lee",
+      role: "UX Designer",
+      avatar: "https://placehold.co/100x100.png",
+      dataAiHint: "woman portrait",
+      text: "As a visual learner, PathFinder is a dream come true. I was able to map out my journey into product management and stay motivated the whole way through.",
+    },
+    {
+      name: "David Chen",
+      role: "Data Scientist",
+      avatar: "https://placehold.co/100x100.png",
+      dataAiHint: "man smiling",
+      text: "The AI insights are incredibly helpful for finding the best resources and estimating how long each step will take. It's like having a personal mentor.",
+    },
   ];
 
 
@@ -169,6 +194,38 @@ export default function Home() {
             </div>
         </div>
       </section>
+
+      <section className="py-24 w-full max-w-6xl">
+        <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Loved by Learners Worldwide
+            </h2>
+            <p className="text-muted-foreground mt-2">Don't just take our word for it. Here's what our users are saying.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {testimonials.map((testimonial) => (
+            <Card key={testimonial.name} className="bg-card/80 backdrop-blur-sm flex flex-col justify-between">
+                <CardContent className="pt-6">
+                    <div className="flex gap-1 mb-2">
+                        {[...Array(5)].map((_, i) => <Star key={i} className="text-primary fill-primary h-4 w-4" />)}
+                    </div>
+                    <p className="text-base text-foreground/90 italic">"{testimonial.text}"</p>
+                </CardContent>
+                <CardHeader className="flex-row gap-4 items-center">
+                    <Avatar>
+                      <AvatarImage src={testimonial.avatar} data-ai-hint={testimonial.dataAiHint} />
+                      <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <CardTitle className="text-base font-semibold">{testimonial.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    </div>
+                </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
+
     </main>
   );
 }
