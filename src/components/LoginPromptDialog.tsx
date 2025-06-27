@@ -31,11 +31,11 @@ export default function LoginPromptDialog({ isOpen, onOpenChange }: LoginPromptD
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
-            <Button asChild>
-                <Link href="/login"><LogIn /> Login</Link>
+            <Button asChild className="w-full">
+                <Link href="/login"><LogIn className="mr-2 h-4 w-4"/> Login</Link>
             </Button>
-            <Button variant="secondary" asChild>
-                <Link href="/signup"><UserPlus /> Sign Up</Link>
+            <Button variant="secondary" asChild className="w-full">
+                <Link href="/signup"><UserPlus className="mr-2 h-4 w-4"/> Sign Up</Link>
             </Button>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
         </AlertDialogFooter>

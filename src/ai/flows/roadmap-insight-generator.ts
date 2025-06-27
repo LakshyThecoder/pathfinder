@@ -19,11 +19,11 @@ const RoadmapInsightInputSchema = z.object({
 export type RoadmapInsightInput = z.infer<typeof RoadmapInsightInputSchema>;
 
 const RoadmapInsightOutputSchema = z.object({
-  insight: z.string().describe('AI-generated insights about the node content.'),
-  resources: z.string().describe('Recommended resources for learning the node content.'),
+  insight: z.string().describe("A concise, expert insight about the learning topic. This should be a key piece of advice or a mental model."),
+  resources: z.string().describe("A bulleted list of 2-3 recommended resources (e.g., specific tutorials, documentation pages, or courses) as a single string."),
   durationEstimate: z
     .string()
-    .describe('An estimated duration for learning the node content.'),
+    .describe("An estimated duration to achieve a solid understanding of the topic (e.g., '1-2 weeks', '8-10 hours')."),
 });
 export type RoadmapInsightOutput = z.infer<typeof RoadmapInsightOutputSchema>;
 
@@ -35,14 +35,14 @@ const prompt = ai.definePrompt({
   name: 'roadmapInsightPrompt',
   input: {schema: RoadmapInsightInputSchema},
   output: {schema: RoadmapInsightOutputSchema},
-  prompt: `You are an expert learning advisor. For the given roadmap node content, provide a detailed response in the required structured JSON format.
+  prompt: `You are an expert learning advisor. For the given roadmap node topic, provide a detailed response in the required structured JSON format.
 
 **Roadmap Node:** {{{nodeContent}}}
 
-Based on the node content, provide:
-- A concise insight about the topic for the 'insight' field.
-- A string containing a list of recommended resources (e.g., tutorials, documentation, courses) for the 'resources' field.
-- A string containing an estimated duration to learn the topic for the 'durationEstimate' field.
+Based on the node topic, provide the following:
+- 'insight': A concise, expert insight about the topic. This should be a key piece of advice, a common pitfall to avoid, or a powerful mental model.
+- 'resources': A string containing a bulleted list of 2-3 specific, high-quality learning resources.
+- 'durationEstimate': A string containing a realistic, estimated time to learn the topic for a beginner (e.g., "1-2 weeks", "8-10 hours").
 `,
 });
 
@@ -54,6 +54,9 @@ const roadmapInsightGeneratorFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error("Failed to generate insights. AI output was null.");
+    }
+    return output;
   }
 );

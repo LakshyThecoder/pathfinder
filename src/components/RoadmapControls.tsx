@@ -56,10 +56,10 @@ export default function RoadmapControls({ query, roadmapTitle }: RoadmapControls
                 title: 'Preparing Download',
                 description: 'Your roadmap image is being generated...',
             });
-            toPng(roadmapElement, { cacheBust: true, backgroundColor: '#09090b', pixelRatio: 2 })
+            toPng(roadmapElement, { cacheBust: true, backgroundColor: '#020817', pixelRatio: 2 })
                 .then((dataUrl) => {
                     const link = document.createElement('a');
-                    link.download = `${roadmapTitle.replace(/\s+/g, '-').toLowerCase()}-roadmap.png`;
+                    link.download = `${roadmapTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-roadmap.png`;
                     link.href = dataUrl;
                     link.click();
                 })

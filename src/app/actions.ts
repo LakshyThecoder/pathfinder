@@ -8,9 +8,9 @@ export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<Roa
   try {
     const result = await roadmapInsightGenerator(input);
     return result;
-  } catch (e) {
-    console.error(e);
-    return { error: "Failed to generate insights. Please try again." };
+  } catch (e: any) {
+    console.error("Error in getRoadmapInsight:", e);
+    return { error: e.message || "Failed to generate insights. Please try again." };
   }
 }
 
@@ -18,9 +18,9 @@ export async function getAiRoadmap(input: GenerateRoadmapInput): Promise<Generat
     try {
       const result = await generateRoadmap(input);
       return result;
-    } catch (e) {
-      console.error(e);
-      return { error: "Failed to generate the roadmap. The AI may be busy or the topic is too complex. Please try again later or with a different topic." };
+    } catch (e: any) {
+      console.error("Error in getAiRoadmap:", e);
+      return { error: e.message || "Failed to generate the roadmap. The AI may be busy or the topic is too complex. Please try again later or with a different topic." };
     }
 }
 
@@ -28,8 +28,8 @@ export async function getFollowUpAnswer(input: FollowUpInput): Promise<FollowUpO
   try {
     const result = await getFollowUpAnswerFlow(input);
     return result;
-  } catch (e) {
-    console.error(e);
-    return { error: "Failed to get an answer. Please try again." };
+  } catch (e: any) {
+    console.error("Error in getFollowUpAnswer:", e);
+    return { error: e.message || "Failed to get an answer. Please try again." };
   }
 }

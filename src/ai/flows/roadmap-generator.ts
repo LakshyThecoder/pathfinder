@@ -18,15 +18,7 @@ const GenerateRoadmapInputSchema = z.object({
 });
 export type GenerateRoadmapInput = z.infer<typeof GenerateRoadmapInputSchema>;
 
-const RoadmapNodeWithIdSchema: z.ZodType<RoadmapNodeData> = z.lazy(() =>
-  z.object({
-    id: z.string(),
-    title: z.string(),
-    level: z.enum(['Beginner', 'Intermediate', 'Advanced']),
-    children: z.array(RoadmapNodeWithIdSchema).optional(),
-  })
-);
-export type GenerateRoadmapOutput = z.infer<typeof RoadmapNodeWithIdSchema>;
+export type GenerateRoadmapOutput = RoadmapNodeData;
 
 
 // --- Schemas for AI output (no IDs, flatter structure for speed) ---
@@ -80,7 +72,7 @@ You must:
 2.  The 'level' for the overall roadmap object should be "Beginner".
 3.  Create a flat list of topics for the 'children' array. This list must contain topics for 'Beginner', 'Intermediate', and 'Advanced' levels.
 4.  For each topic in the 'children' array, you must provide a 'title' (a specific skill or concept) and a 'level' ('Beginner', 'Intermediate', or 'Advanced').
-5.  Ensure there are between 3 and 5 topics for each of the three difficulty levels. A smaller number of high-quality topics is better.`,
+5.  Ensure there are between 3 and 5 topics for EACH of the three difficulty levels. A smaller number of high-quality topics is better. Do not create nested children.`,
 });
 
 const roadmapGeneratorFlow = ai.defineFlow(
@@ -91,6 +83,9 @@ const roadmapGeneratorFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+        throw new Error("Failed to generate roadmap from AI. Output was null.");
+    }
+    return output;
   }
 );

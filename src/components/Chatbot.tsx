@@ -83,8 +83,8 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
           console.error(result.error);
           toast({
             variant: "destructive",
-            title: "Error",
-            description: "Could not load AI insights. Please try again later.",
+            title: "Error fetching insights",
+            description: result.error,
           });
         } else {
           setMessages([{
@@ -100,10 +100,11 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
   
   useEffect(() => {
     // Scroll to bottom when new messages are added
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    const viewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isInsightPending, isFollowUpPending]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +118,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
       const result = await getFollowUpAnswer({ nodeContent: selectedNode.title, question: input });
       if ("error" in result) {
         toast({ variant: "destructive", title: "Error", description: result.error });
-        setMessages(prev => prev.slice(0, -1)); // remove user message on error
+        setMessages(prev => prev.slice(0, -1)); 
       } else {
         const assistantMessage: Message = { id: Date.now() + 1, role: "assistant", content: result.answer };
         setMessages(prev => [...prev, assistantMessage]);
@@ -136,7 +137,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
           </SheetDescription>
           }
         </SheetHeader>
-        <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
+        <ScrollArea className="flex-1" ref={scrollAreaRef}>
             <div className="p-6 space-y-6">
                 <AnimatePresence>
                     {messages.map((message) => (
@@ -160,7 +161,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode }: ChatbotP
                              message.role === "assistant" ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground",
                              message.isInsight && "bg-transparent p-0 w-full max-w-full"
                              )}>
-                            <p className="text-sm leading-relaxed">{message.content}</p>
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
                         </div>
 
                         {message.role === "user" && (

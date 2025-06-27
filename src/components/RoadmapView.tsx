@@ -31,7 +31,7 @@ function RoadmapLoading() {
     }, 2500);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [loadingMessages]);
 
   return (
     <div className="p-8 w-full h-full flex flex-col items-center justify-center">
@@ -68,15 +68,18 @@ export default function RoadmapView({ query }: { query: string }) {
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
 
   useEffect(() => {
     setRoadmapData(null);
+    setIsLoading(true);
 
     async function fetchRoadmap() {
       const result = await getAiRoadmap({ query });
+      setIsLoading(false);
       if ('error' in result) {
         toast({
           variant: 'destructive',
@@ -103,7 +106,7 @@ export default function RoadmapView({ query }: { query: string }) {
     }
   };
 
-  if (!roadmapData) {
+  if (isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
 

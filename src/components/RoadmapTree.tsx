@@ -11,6 +11,8 @@ interface RoadmapTreeProps {
 }
 
 const TreeColumn = ({ nodes, onNodeSelect, selectedNodeId, title }: { nodes: RoadmapNodeData[], onNodeSelect: (node: RoadmapNodeData) => void; selectedNodeId?: string, title: string }) => {
+  if (nodes.length === 0) return null;
+  
   return (
     <div className="flex flex-col items-center gap-8 min-w-[250px]">
        <h2 className="text-2xl font-semibold text-muted-foreground">{title}</h2>
@@ -25,7 +27,6 @@ const TreeColumn = ({ nodes, onNodeSelect, selectedNodeId, title }: { nodes: Roa
 }
 
 export default function RoadmapTree({ data, onNodeSelect, selectedNodeId }: RoadmapTreeProps) {
-    // Group children by level for columnar layout
     const levels: Record<string, RoadmapNodeData[]> = {
         'Beginner': [],
         'Intermediate': [],
