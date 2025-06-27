@@ -25,20 +25,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
       setUser(newUser);
       setLoading(false);
-      
-      if (newUser) {
-        const token = await newUser.getIdToken();
-        await fetch('/api/login', {
+
+      try {
+        if (newUser) {
+          const token = await newUser.getIdToken();
+          const response = await fetch('/api/login', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+
+          if (!response.ok) {
+            // The server failed to create a session cookie.
+            // This is a critical error, so we sign the user out on the client
+            // to keep the states consistent.
+            throw new Error('Failed to create a server session.');
+          }
+        } else {
+          // User is logged out, so clear the server session.
+          await fetch('/api/logout', { method: 'POST' });
+        }
+      } catch (error) {
+        console.error("Auth session sync error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Error',
+          description: 'Your session could not be synchronized with the server. Please try signing in again.',
         });
-      } else {
-         await fetch('/api/logout', { method: 'POST' });
+        // Force a sign out on the client to avoid being in a broken state.
+        if (user) {
+          await firebaseSignOut(auth);
+        }
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast, user]);
 
   const logout = async () => {
     await firebaseSignOut(auth);

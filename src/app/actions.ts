@@ -31,7 +31,7 @@ export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<Roa
 export async function saveRoadmapAction(roadmap: StoredRoadmap): Promise<StoredRoadmap | { error: string }> {
     const userId = await getUserId();
     if (!userId) {
-        return { error: 'You must be logged in to save a roadmap.' };
+        return { error: 'Your session could not be verified. Please log in again to save your roadmap.' };
     }
 
     try {
@@ -71,9 +71,13 @@ export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { err
 }
 
 export async function getStoredRoadmap(id: string): Promise<StoredRoadmap | { error: string }> {
+    const userId = await getUserId();
+    if (!userId) {
+        return { error: 'You must be logged in to view this roadmap.' };
+    }
+
     try {
         const roadmap = await getRoadmapFromDb(id);
-        const userId = await getUserId();
 
         if (!roadmap) {
             return { error: 'Roadmap not found.' };
