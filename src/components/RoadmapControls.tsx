@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,6 @@ interface RoadmapControlsProps {
 
 export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) {
     const { toast } = useToast();
-
-    const handleShare = useCallback(() => {
-        navigator.clipboard.writeText(window.location.href);
-        toast({
-            title: 'Link Copied!',
-            description: 'Roadmap link has been copied to your clipboard.',
-        });
-    }, [toast]);
 
     const handleDownload = useCallback(() => {
         const roadmapElement = document.getElementById('roadmap-container');
@@ -51,18 +43,6 @@ export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) 
         <TooltipProvider>
             <div className="absolute top-6 right-6 z-20">
                 <div className="flex items-center gap-1 p-1 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg">
-                    {/* Share Button */}
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={handleShare}>
-                                <Share2 className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Share</p>
-                        </TooltipContent>
-                    </Tooltip>
-
                     {/* Download Button */}
                     <Tooltip>
                         <TooltipTrigger asChild>

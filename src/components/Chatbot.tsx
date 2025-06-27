@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import type { RoadmapNodeData, NodeStatus } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getRoadmapInsight, getFollowUpAnswer, updateNodeStatusAction } from "@/app/actions";
+import { getRoadmapInsight, getFollowUpAnswer } from "@/app/actions";
 import type { RoadmapInsightOutput } from "@/ai/flows/roadmap-insight-generator";
 import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
@@ -21,7 +21,6 @@ interface ChatbotProps {
   selectedNode: RoadmapNodeData | null;
   onStatusChange: (nodeId: string, status: NodeStatus) => void;
   currentNodeStatus: NodeStatus;
-  roadmapId?: string;
 }
 
 type Message = {
@@ -66,7 +65,7 @@ const InitialInsight = ({ insight }: { insight: RoadmapInsightOutput }) => (
   </div>
 );
 
-export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusChange, currentNodeStatus, roadmapId }: ChatbotProps) {
+export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusChange, currentNodeStatus }: ChatbotProps) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -128,18 +127,8 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
   };
 
   const handleStatusClick = (status: NodeStatus) => {
-    if (selectedNode && roadmapId) {
+    if (selectedNode) {
         onStatusChange(selectedNode.id, status);
-        updateNodeStatusAction(roadmapId, selectedNode.id, status);
-    } else if (selectedNode) {
-        // Handle local status update for logged-out users
-        onStatusChange(selectedNode.id, status);
-        if (!roadmapId) {
-            toast({
-                title: "Login to Save Progress",
-                description: "Your progress will be saved once you log in.",
-            });
-        }
     }
   };
 

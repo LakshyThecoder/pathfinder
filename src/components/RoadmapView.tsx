@@ -3,14 +3,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import type { RoadmapNodeData, NodeStatus, StoredRoadmap } from '@/types';
+import type { RoadmapNodeData, NodeStatus } from '@/types';
 import RoadmapTree from './RoadmapTree';
 import Chatbot from './Chatbot';
 import RoadmapControls from './RoadmapControls';
 import RoadmapProgress from './RoadmapProgress';
-import { getAiRoadmap, getStoredRoadmap } from '@/app/actions';
+import { getAiRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 function RoadmapLoading() {
@@ -65,32 +64,25 @@ function RoadmapLoading() {
   );
 }
 
-export default function RoadmapView({ query, roadmapId }: { query?: string, roadmapId?: string }) {
-  const [roadmapData, setRoadmapData] = useState<StoredRoadmap | null>(null);
+export default function RoadmapView({ query }: { query?: string }) {
+  const [roadmapData, setRoadmapData] = useState<RoadmapNodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
-  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
 
   useEffect(() => {
     async function fetchRoadmap() {
-      setIsLoading(true);
-      let result: StoredRoadmap | { error: string };
-      
-      if (roadmapId) {
-        result = await getStoredRoadmap(roadmapId);
-      } else if (query) {
-        result = await getAiRoadmap(query);
-      } else {
-        // This case should be handled by the guard clauses below, but is a fallback.
+      if (!query) {
         router.push('/');
         return;
       }
-
+      
+      setIsLoading(true);
+      const result = await getAiRoadmap(query);
       setIsLoading(false);
 
       if ('error' in result) {
@@ -102,43 +94,11 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         router.push('/');
       } else {
         setRoadmapData(result);
-        setNodeStatuses(result.nodeStatuses || {});
-        
-        // If a new roadmap was created, update the URL to reflect its new ID.
-        if (query && result.id && !roadmapId) {
-          router.replace(`/roadmap?id=${result.id}`, { scroll: false });
-        }
+        setNodeStatuses({});
       }
     }
-
-    // This is the gatekeeper. We do not proceed until the authentication state is fully resolved.
-    if (authLoading) {
-      return;
-    }
-
-    if (roadmapId) {
-      // If we have a roadmap ID, we can attempt to fetch it.
-      // The server action (`getStoredRoadmap`) will handle permissions.
-      fetchRoadmap();
-    } else if (query) {
-      // If we only have a query, it means we're creating a new roadmap.
-      // The user MUST be logged in for this.
-      if (user) {
-        fetchRoadmap();
-      } else {
-        // Auth is resolved, but there is no user. Show error and redirect.
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Required',
-            description: 'You must be logged in to generate a roadmap.',
-        });
-        router.push('/');
-      }
-    } else {
-      // No roadmapId and no query is an invalid state. Go home.
-      router.push('/');
-    }
-  }, [query, roadmapId, user, authLoading, router, toast]);
+    fetchRoadmap();
+  }, [query, router, toast]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
@@ -163,12 +123,10 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   }, [nodeStatuses, roadmapData]);
 
 
-  if (isLoading || authLoading || !roadmapData) {
+  if (isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
   
-  const isSaved = !!roadmapData.id;
-
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div id="roadmap-container" className="h-full w-full bg-background">
@@ -193,7 +151,6 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         selectedNode={selectedNode}
         onStatusChange={handleStatusChange}
         currentNodeStatus={selectedNode ? nodeStatuses[selectedNode.id] || 'not-started' : 'not-started'}
-        roadmapId={isSaved ? roadmapData.id : undefined}
       />
     </div>
   );

@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { RoadmapNodeData } from '@/types';
 
 const GenerateRoadmapInputSchema = z.object({
@@ -46,11 +46,11 @@ export async function generateRoadmap(input: GenerateRoadmapInput): Promise<Gene
     }
 
     const finalRoadmap: GenerateRoadmapOutput = {
-      id: uuidv4(),
+      id: randomUUID(),
       title: roadmapFromAI.title,
       level: roadmapFromAI.level,
       children: roadmapFromAI.children.map(child => ({
-        id: uuidv4(),
+        id: randomUUID(),
         title: child.title,
         level: child.level,
       }))

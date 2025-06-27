@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/Header";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "PathFinder",
@@ -27,11 +26,9 @@ export default function RootLayout({
         ></link>
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased")}>
-        <AuthProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Toaster />
-        </AuthProvider>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Toaster />
       </body>
     </html>
   );
