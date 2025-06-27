@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoadmapNodeData } from '@/types';
 
@@ -48,6 +48,10 @@ type AiOutput = z.infer<typeof GenerateRoadmapAIOutputSchema>;
 
 export async function generateRoadmap(input: GenerateRoadmapInput): Promise<GenerateRoadmapOutput> {
     const roadmapFromAI = await roadmapGeneratorFlow(input);
+
+    if (!roadmapFromAI || !roadmapFromAI.title || !roadmapFromAI.children) {
+      throw new Error("AI failed to generate a valid roadmap structure. The response was empty or malformed.");
+    }
 
     const finalRoadmap: GenerateRoadmapOutput = {
       id: uuidv4(),
