@@ -20,8 +20,6 @@ if (!admin.apps.length) {
             });
         } catch (error: any) {
             console.error('Firebase Admin SDK initialization failed:', error.message);
-            // Initialize a dummy app to prevent crashes on subsequent calls
-            app = admin.initializeApp();
         }
     } else {
         console.warn(
@@ -32,8 +30,6 @@ Please ensure the following environment variables are set in your .env file:
 - FIREBASE_PRIVATE_KEY
 You can get these from your Firebase project settings under "Service accounts".`
         );
-        // Initialize a dummy app to prevent crashes on subsequent calls
-        app = admin.initializeApp();
     }
 } else {
     app = admin.app();
@@ -44,7 +40,7 @@ async function getDecodedIdToken() {
     if (!session) return null;
 
     // Avoid trying to verify if the SDK is not properly configured
-    if (!admin.apps[0]?.options.credential) {
+    if (!admin.apps.length || !admin.apps[0]?.options.credential) {
       console.warn('[Firebase Admin] Cannot verify session cookie because Admin SDK is not configured.');
       return null;
     }
