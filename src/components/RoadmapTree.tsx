@@ -50,7 +50,7 @@ export default function RoadmapTree({ data, onNodeSelect, selectedNodeId }: Road
     const filledLevels = Object.entries(levels).filter(([, nodes]) => nodes.length > 0);
 
   return (
-    <div className="p-8 h-full w-full overflow-auto bg-grid-slate-100/[0.05]">
+    <div className="p-8 h-full w-full overflow-auto">
         <h1 className="text-4xl font-bold mb-16 text-center text-foreground capitalize">{data.title}</h1>
         <div className="flex justify-center items-start gap-8 lg:gap-16 px-4">
            {filledLevels.map(([level, nodes], index) => (

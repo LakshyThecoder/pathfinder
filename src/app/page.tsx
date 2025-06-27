@@ -19,9 +19,9 @@ export default function Home() {
   };
 
   const trendingTopics = [
-    { name: "UI/UX Design", icon: <PenTool className="h-8 w-8 text-accent" />, description: "Craft beautiful and intuitive user experiences." },
-    { name: "Data Science", icon: <BrainCircuit className="h-8 w-8 text-accent" />, description: "Uncover insights from data to drive decisions." },
-    { name: "Web Development", icon: <Code className="h-8 w-8 text-accent" />, description: "Build modern, responsive websites and apps." },
+    { name: "UI/UX Design", icon: <PenTool className="h-8 w-8 text-primary" />, description: "Craft beautiful and intuitive user experiences." },
+    { name: "Data Science", icon: <BrainCircuit className="h-8 w-8 text-primary" />, description: "Uncover insights from data to drive decisions." },
+    { name: "Web Development", icon: <Code className="h-8 w-8 text-primary" />, description: "Build modern, responsive websites and apps." },
   ];
 
   const handleCardClick = (name: string) => {
@@ -29,9 +29,14 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+       <div className="absolute top-0 left-0 -z-10 h-full w-full bg-background">
+        <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+        <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-[radial-gradient(circle_400px_at_50%_300px,#3b82f633,transparent)]"></div>
+      </div>
+
       <div className="w-full max-w-3xl text-center">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-accent">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-primary to-accent">
           Chart Your Course to Mastery
         </h1>
         <p className="text-lg text-muted-foreground mt-4 mb-8 max-w-xl mx-auto">
@@ -46,7 +51,7 @@ export default function Home() {
             placeholder="What do you want to learn?"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            className="flex-1 py-6 text-base rounded-full"
+            className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm"
             aria-label="Learning Goal Input"
           />
           <Button type="submit" size="lg" className="py-6 rounded-full">
@@ -63,7 +68,7 @@ export default function Home() {
           {trendingTopics.map((topic) => (
             <Card
               key={topic.name}
-              className="group cursor-pointer bg-card/50 hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20"
+              className="group cursor-pointer bg-card/80 backdrop-blur-sm hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 border-transparent border-2"
               onClick={() => handleCardClick(topic.name)}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick(topic.name)}
               tabIndex={0}
