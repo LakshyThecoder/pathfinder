@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
     if (!auth.createSessionCookie) {
-        console.error("Firebase Admin SDK not configured. Cannot create session cookie. Make sure FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY are set in .env");
-        return NextResponse.json({ status: 'error', message: 'Server not configured for authentication.' }, { status: 503 });
+        const errorMessage = "Firebase Admin SDK is not configured. Server-side authentication cannot be completed. Please ensure FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY are set in your environment variables.";
+        console.error(errorMessage);
+        return NextResponse.json({ status: 'error', message: errorMessage }, { status: 503 });
     }
 
     try {

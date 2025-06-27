@@ -4,45 +4,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, History as HistoryIcon, Loader2 } from "lucide-react";
+import { Search, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Skeleton } from "@/components/ui/skeleton";
 import AuthWall from "@/components/AuthWall";
 import { getHistoryAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
-
-function HistoryLoading() {
-  return (
-    <>
-      <div className="flex flex-col items-center text-center mb-8">
-        <HistoryIcon className="h-12 w-12 text-primary mb-4" />
-        <h1 className="text-4xl font-bold">Your Roadmap History</h1>
-        <p className="text-muted-foreground mt-2">Revisit and continue your learning journeys.</p>
-      </div>
-      <div className="flex items-center gap-4 mb-8 max-w-lg mx-auto">
-        <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 w-24" />
-      </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-4 w-1/3" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-10 w-full" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </>
-  );
-}
+import PageLoading from '@/components/PageLoading';
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
@@ -73,11 +41,11 @@ export default function HistoryPage() {
   }, [searchTerm, history]);
 
 
-  if (authLoading) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <HistoryLoading />
-      </div>
+  if (authLoading || (user && loading)) {
+     return (
+        <div className="container mx-auto py-10 px-4">
+            <PageLoading message="Fetching your roadmap history..." />
+        </div>
     );
   }
 
@@ -110,9 +78,7 @@ export default function HistoryPage() {
           />
         </div>
       </div>
-      {loading ? (
-        <HistoryLoading />
-      ) : filteredHistory.length > 0 ? (
+      {filteredHistory.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredHistory.map((item) => (
             <Card key={item.id} className="hover:shadow-lg hover:border-primary/50 transition-all flex flex-col">

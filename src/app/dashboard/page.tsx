@@ -12,6 +12,7 @@ import AuthWall from '@/components/AuthWall';
 import { getDashboardDataAction, getDailyChallengeAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
 import type { DailyChallengeOutput } from '@/ai/flows/suggestion-generator';
+import PageLoading from '@/components/PageLoading';
 
 interface DashboardData {
     stats: {
@@ -21,35 +22,6 @@ interface DashboardData {
         topicDistribution: { name: string; value: number }[];
     };
     recentRoadmaps: StoredRoadmap[];
-}
-
-function DashboardLoading() {
-    return (
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <Skeleton className="h-9 w-48 mb-2" />
-                    <Skeleton className="h-5 w-64" />
-                </div>
-                <Skeleton className="h-10 w-40 hidden md:block" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <Skeleton className="h-52 rounded-lg lg:col-span-1 md:col-span-2" />
-                <Skeleton className="h-24 rounded-lg" />
-                <Skeleton className="h-24 rounded-lg" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <Skeleton className="h-80 rounded-lg" />
-                </div>
-                <div>
-                    <Skeleton className="h-80 rounded-lg" />
-                </div>
-            </div>
-        </div>
-    );
 }
 
 export default function DashboardPage() {
@@ -78,8 +50,8 @@ export default function DashboardPage() {
         }
     }, [user]);
 
-    if (authLoading) {
-        return <DashboardLoading />;
+    if (authLoading || (user && loading)) {
+        return <PageLoading message="Loading your personalized dashboard..." />;
     }
 
     if (!user) {
@@ -91,10 +63,6 @@ export default function DashboardPage() {
                 />
             </div>
         );
-    }
-
-    if (loading) {
-        return <DashboardLoading />;
     }
 
     return (
