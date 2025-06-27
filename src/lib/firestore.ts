@@ -1,5 +1,3 @@
-'use server'; // This module should only run on the server
-
 import { db } from './firebase-admin'; // Use the admin instance
 import { FieldValue } from 'firebase-admin/firestore';
 import type { StoredRoadmap, RoadmapNodeData, NodeStatus } from '@/types';

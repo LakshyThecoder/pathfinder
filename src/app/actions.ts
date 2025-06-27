@@ -6,11 +6,11 @@ import { getFollowUpAnswer as getFollowUpAnswerFlow, FollowUpInput, FollowUpOutp
 import { generateDailyChallenge, DailyChallengeOutput } from "@/ai/flows/suggestion-generator";
 import { saveRoadmap as saveRoadmapToDb, getRoadmap as getRoadmapFromDb, getUserRoadmaps, updateNodeStatus as updateNodeStatusInDb, getDashboardStats } from "@/lib/firestore";
 import type { StoredRoadmap, RoadmapNodeData, NodeStatus } from "@/types";
-import { session } from "@/lib/firebase-admin";
+import { getDecodedIdToken } from "@/lib/firebase-admin";
 
 async function getUserId(): Promise<string | null> {
     try {
-        const user = await session.getDecodedIdToken();
+        const user = await getDecodedIdToken();
         return user?.uid || null;
     } catch (e) {
         return null;

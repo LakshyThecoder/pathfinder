@@ -1,4 +1,3 @@
-'use server';
 import admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -41,14 +40,14 @@ function initializeAdminApp(): App {
 
 // Initialize the app and export the authenticated services
 const appInstance = initializeAdminApp();
-const auth = getAuth(appInstance);
-const db = getFirestore(appInstance);
+export const auth = getAuth(appInstance);
+export const db = getFirestore(appInstance);
 
 /**
  * Verifies the session cookie from the incoming request.
  * @returns The decoded ID token if the session is valid, otherwise null.
  */
-async function getDecodedIdToken() {
+export async function getDecodedIdToken() {
   const sessionCookie = cookies().get('firebase-session')?.value;
   if (!sessionCookie) return null;
 
@@ -61,9 +60,3 @@ async function getDecodedIdToken() {
     return null;
   }
 }
-
-export { auth, db };
-
-export const session = {
-  getDecodedIdToken,
-};
