@@ -1,17 +1,21 @@
 "use client";
 
-import { Share2, Star, Download } from 'lucide-react';
+import { Share2, Star, Download, Loader2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCallback } from 'react';
+import { cn } from '@/lib/utils';
 
 interface RoadmapControlsProps {
     roadmapTitle: string;
+    onSave?: () => void;
+    isSaved: boolean;
+    isSaving: boolean;
 }
 
-export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) {
+export default function RoadmapControls({ roadmapTitle, onSave, isSaved, isSaving }: RoadmapControlsProps) {
     const { toast } = useToast();
 
     const handleShare = useCallback(() => {
@@ -19,13 +23,6 @@ export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) 
         toast({
             title: 'Link Copied!',
             description: 'Roadmap link has been copied to your clipboard.',
-        });
-    }, [toast]);
-
-    const handleRate = useCallback(() => {
-        toast({
-            title: 'Thank You!',
-            description: 'We appreciate your feedback.',
         });
     }, [toast]);
 
@@ -54,28 +51,71 @@ export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) 
         }
     }, [roadmapTitle, toast]);
 
-    const controls = [
-        { label: 'Share', icon: Share2, action: handleShare },
-        { label: 'Rate', icon: Star, action: handleRate },
-        { label: 'Download', icon: Download, action: handleDownload },
-    ];
-
     return (
         <TooltipProvider>
             <div className="absolute top-6 right-6 z-20">
                 <div className="flex items-center gap-1 p-1 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg">
-                    {controls.map((control) => (
-                        <Tooltip key={control.label}>
+                    {/* Save Button Logic */}
+                    {onSave && (
+                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={control.action}>
-                                    <control.icon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full h-10 w-10 group" 
+                                    onClick={onSave}
+                                    disabled={isSaving || isSaved}
+                                >
+                                    {isSaving ? (
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                    ) : (
+                                        <Star className={cn("h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors", isSaved && "fill-primary text-primary")} />
+                                    )}
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>{control.label}</p>
+                                <p>{isSaved ? 'Saved' : (isSaving ? 'Saving...' : 'Save Roadmap')}</p>
                             </TooltipContent>
                         </Tooltip>
-                    ))}
+                    )}
+                     {/* Show a disabled "Saved" button if already saved */}
+                     {!onSave && isSaved && (
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" disabled>
+                                    <Star className="h-5 w-5 fill-primary text-primary" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Saved</p>
+                            </TooltipContent>
+                        </Tooltip>
+                     )}
+
+
+                    {/* Share Button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={handleShare}>
+                                <Share2 className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Share</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    {/* Download Button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 group" onClick={handleDownload}>
+                                <Download className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Download</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
         </TooltipProvider>

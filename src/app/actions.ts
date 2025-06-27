@@ -5,7 +5,7 @@ import { generateRoadmap, GenerateRoadmapOutput } from "@/ai/flows/roadmap-gener
 import { getFollowUpAnswer as getFollowUpAnswerFlow, FollowUpInput, FollowUpOutput } from "@/ai/flows/follow-up-question-generator";
 import { generateDailyChallenge, DailyChallengeOutput } from "@/ai/flows/suggestion-generator";
 import { saveRoadmap as saveRoadmapToDb, getRoadmap as getRoadmapFromDb, getUserRoadmaps, updateNodeStatus as updateNodeStatusInDb, getDashboardStats } from "@/lib/firestore";
-import type { StoredRoadmap, NodeStatus } from "@/types";
+import type { StoredRoadmap, RoadmapNodeData, NodeStatus } from "@/types";
 import { auth } from "@/lib/firebase-admin";
 
 async function getUserId(): Promise<string | null> {
@@ -28,25 +28,41 @@ export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<Roa
   }
 }
 
+export async function saveRoadmapAction(roadmap: StoredRoadmap): Promise<StoredRoadmap | { error: string }> {
+    const userId = await getUserId();
+    if (!userId) {
+        return { error: 'You must be logged in to save a roadmap.' };
+    }
+
+    try {
+        // The roadmap data passed from the client doesn't have the final DB properties yet.
+        const savedRoadmap = await saveRoadmapToDb(userId, roadmap, roadmap.query);
+        // Serialize the roadmap for the client, converting the Timestamp to a string.
+        return {
+            ...savedRoadmap,
+            createdAt: (savedRoadmap.createdAt as any).toDate().toISOString(),
+        } as StoredRoadmap;
+    } catch (e: any) {
+        console.error("Error in saveRoadmapAction:", e);
+        return { error: e.message || 'Failed to save roadmap.' };
+    }
+}
+
+
 export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { error: string }> {
     try {
       const result = await generateRoadmap({ query });
       const userId = await getUserId();
 
-      if (userId) {
-        const savedRoadmap = await saveRoadmapToDb(userId, result, query);
-        return savedRoadmap;
-      }
-      
-      // For logged-out users, return an unsaved roadmap structure
+      // Return an unsaved roadmap structure. Saving is now an explicit user action.
       return {
         ...(result as GenerateRoadmapOutput),
-        id: result.id || 'temp-id',
-        userId: '',
+        id: result.id || `temp-${Date.now()}`,
+        userId: userId || '',
         query: query,
         nodeStatuses: {},
-        createdAt: new Date() as any,
-      };
+        // No 'createdAt' property, as it has not been saved to the database.
+      } as StoredRoadmap;
 
     } catch (e: any) {
       console.error("Error in getAiRoadmap:", e);
@@ -68,7 +84,11 @@ export async function getStoredRoadmap(id: string): Promise<StoredRoadmap | { er
             return { error: 'You do not have permission to view this roadmap.' };
         }
         
-        return roadmap;
+        // Serialize the timestamp before sending to the client
+        return {
+            ...roadmap,
+            createdAt: (roadmap.createdAt as any).toDate().toISOString(),
+        } as StoredRoadmap;
     } catch (e: any) {
         console.error("Error in getStoredRoadmap:", e);
         return { error: e.message || 'Failed to retrieve the roadmap.' };
@@ -113,7 +133,7 @@ export async function getDashboardDataAction() {
 
         const serializableRecentRoadmaps = recentRoadmaps.map(roadmap => ({
             ...roadmap,
-            createdAt: roadmap.createdAt.toDate().toISOString(),
+            createdAt: (roadmap.createdAt as any).toDate().toISOString(),
         }));
         
         return {
@@ -171,7 +191,7 @@ export async function getHistoryAction() {
     const roadmaps = await getUserRoadmaps(userId);
     const serializableRoadmaps = roadmaps.map(roadmap => ({
         ...roadmap,
-        createdAt: roadmap.createdAt.toDate().toISOString(),
+        createdAt: (roadmap.createdAt as any).toDate().toISOString(),
     }));
     return { roadmaps: serializableRoadmaps };
   } catch (e: any) {
