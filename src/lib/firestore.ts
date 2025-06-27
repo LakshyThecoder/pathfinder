@@ -1,19 +1,21 @@
-import { db } from './firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, getDoc, updateDoc } from 'firebase/firestore';
+'use server'; // This module should only run on the server
+
+import { db } from './firebase-admin'; // Use the admin instance
+import { FieldValue } from 'firebase-admin/firestore';
 import type { StoredRoadmap, RoadmapNodeData, NodeStatus } from '@/types';
 
 // The roadmap data received from the AI, before being stored
 type RawRoadmapData = Omit<RoadmapNodeData, 'id'> & { id?: string };
 
 export async function saveRoadmap(userId: string, roadmapData: RawRoadmapData, originalQuery: string): Promise<StoredRoadmap> {
-  const roadmapsCollection = collection(db, 'roadmaps');
+  const roadmapsCollection = db.collection('roadmaps');
   
-  const docRef = await addDoc(roadmapsCollection, {
+  const docRef = await roadmapsCollection.add({
     ...roadmapData,
     userId,
     query: originalQuery,
     nodeStatuses: {},
-    createdAt: serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 
   return {
@@ -22,35 +24,39 @@ export async function saveRoadmap(userId: string, roadmapData: RawRoadmapData, o
     userId,
     query: originalQuery,
     nodeStatuses: {},
-    createdAt: new Date() as any, // Temporary, will be a Timestamp
+    createdAt: new Date(), // Return a date object for immediate use by the client
   };
 }
 
 export async function getRoadmap(roadmapId: string): Promise<StoredRoadmap | null> {
-    const roadmapRef = doc(db, 'roadmaps', roadmapId);
-    const roadmapSnap = await getDoc(roadmapRef);
+    const roadmapRef = db.collection('roadmaps').doc(roadmapId);
+    const roadmapSnap = await roadmapRef.get();
 
-    if (!roadmapSnap.exists()) {
+    if (!roadmapSnap.exists) {
         return null;
     }
 
-    return { id: roadmapSnap.id, ...roadmapSnap.data() } as StoredRoadmap;
+    const data = roadmapSnap.data();
+    return { id: roadmapSnap.id, ...data } as StoredRoadmap;
 }
 
 
 export async function getUserRoadmaps(userId: string): Promise<StoredRoadmap[]> {
-    const roadmapsCollection = collection(db, 'roadmaps');
-    const q = query(roadmapsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    const roadmapsCollection = db.collection('roadmaps');
+    const q = roadmapsCollection.where('userId', '==', userId).orderBy('createdAt', 'desc');
+    const querySnapshot = await q.get();
 
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StoredRoadmap));
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return { id: doc.id, ...data } as StoredRoadmap;
+    });
 }
 
 export async function updateNodeStatus(roadmapId: string, nodeId: string, status: NodeStatus) {
-    const roadmapRef = doc(db, 'roadmaps', roadmapId);
+    const roadmapRef = db.collection('roadmaps').doc(roadmapId);
     const fieldToUpdate = `nodeStatuses.${nodeId}`;
 
-    await updateDoc(roadmapRef, {
+    await roadmapRef.update({
         [fieldToUpdate]: status
     });
 }
