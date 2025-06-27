@@ -13,11 +13,32 @@ import { useAuth } from '@/context/AuthContext';
 import LoginPromptDialog from './LoginPromptDialog';
 
 function RoadmapLoading() {
+  const loadingMessages = [
+    "Consulting with AI experts...",
+    "Drawing the map to your success...",
+    "Assembling the building blocks of knowledge...",
+    "Plotting the course for your adventure...",
+    "Turning your goal into a grand plan...",
+  ];
+  const [message, setMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setMessage(prevMessage => {
+        const currentIndex = loadingMessages.indexOf(prevMessage);
+        const nextIndex = (currentIndex + 1) % loadingMessages.length;
+        return loadingMessages[nextIndex];
+      });
+    }, 2500);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
     <div className="p-8 w-full h-full flex flex-col items-center justify-center">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Generating Your AI-Powered Roadmap...</h1>
-        <p className="text-muted-foreground">Please wait a moment while we create your personalized learning path.</p>
+        <p className="text-muted-foreground h-5">{message}</p>
       </div>
       <div className="p-8 w-full max-w-5xl">
         <Skeleton className="h-12 w-1/2 mx-auto mb-16" />

@@ -5,17 +5,26 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star } from "lucide-react";
+import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   const [goal, setGoal] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (goal.trim()) {
+    if (goal.trim() && !isLoading) {
+      setIsLoading(true);
       router.push(`/roadmap?query=${encodeURIComponent(goal.trim())}`);
+    }
+  };
+
+  const handleCardClick = (name: string) => {
+    if (!isLoading) {
+      setIsLoading(true);
+      router.push(`/roadmap?query=${encodeURIComponent(name)}`);
     }
   };
 
@@ -24,10 +33,6 @@ export default function Home() {
     { name: "Data Science", icon: <BrainCircuit className="h-8 w-8 text-primary" />, description: "Uncover insights from data to drive decisions." },
     { name: "Web Development", icon: <Code className="h-8 w-8 text-primary" />, description: "Build modern, responsive websites and apps." },
   ];
-
-  const handleCardClick = (name: string) => {
-    router.push(`/roadmap?query=${encodeURIComponent(name)}`);
-  };
 
   const features = [
     {
@@ -115,10 +120,20 @@ export default function Home() {
             onChange={(e) => setGoal(e.target.value)}
             className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm"
             aria-label="Learning Goal Input"
+            disabled={isLoading}
           />
-          <Button type="submit" size="lg" className="py-6 rounded-full">
-            Generate
-            <ArrowRight className="ml-2 h-5 w-5" />
+          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || !goal.trim()}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                Generate
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </>
+            )}
           </Button>
         </form>
       </section>
@@ -137,7 +152,7 @@ export default function Home() {
               className="group cursor-pointer bg-card/80 backdrop-blur-sm hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 border-transparent border-2"
               onClick={() => handleCardClick(topic.name)}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick(topic.name)}
-              tabIndex={0}
+              tabIndex={isLoading ? -1 : 0}
             >
               <CardHeader className="flex flex-col items-center text-center gap-4 pb-2">
                 {topic.icon}
