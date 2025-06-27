@@ -71,7 +71,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
-  const { user, loading: authLoading, sessionReady } = useAuth();
+  const { authLoading, sessionReady } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -102,40 +102,38 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         setRoadmapData(result);
         setNodeStatuses(result.nodeStatuses || {});
         
-        if (query && result.id) {
+        if (query && result.id && !roadmapId) {
           router.replace(`/roadmap?id=${result.id}`, { scroll: false });
         }
       }
     }
 
-    // Guard 1: Wait for the auth library to settle its initial state.
     if (authLoading) {
-      return; 
+      // Do nothing while authentication is in flux. The component will show the loading skeleton.
+      return;
     }
 
-    // After auth has loaded, decide what to do.
-    if (query) {
-      // For new roadmaps, we must have a user AND a ready server session.
-      if (user && sessionReady) {
+    if (roadmapId) {
+      // We have an ID, we can attempt to fetch it. The server action will handle auth.
+      fetchRoadmap();
+    } else if (query) {
+      // This is a new roadmap. We MUST have a ready session.
+      if (sessionReady) {
         fetchRoadmap();
-      } else if (!user) {
-        // If there's no user object, they are definitively logged out.
+      } else {
+        // Session is not ready. Since auth is not loading, we know the user is logged out.
         toast({
             variant: 'destructive',
             title: 'Authentication Required',
-            description: 'You must be logged in to generate a new roadmap.',
+            description: 'You must be logged in to generate a roadmap.',
         });
         router.push('/');
       }
-      // If `user` exists but `sessionReady` is false, we do nothing and let the effect re-run when `sessionReady` changes.
-    } else if (roadmapId) {
-      // For existing roadmaps, we can always try to fetch. The server handles auth.
-      fetchRoadmap();
     } else {
-      // Invalid state: no query or ID.
+      // No ID and no query means this is an invalid state.
       router.push('/');
     }
-  }, [query, roadmapId, user, authLoading, sessionReady, toast, router]);
+  }, [query, roadmapId, authLoading, sessionReady, router, toast]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
@@ -160,7 +158,7 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   }, [nodeStatuses, roadmapData]);
 
 
-  if (isLoading || !roadmapData) {
+  if (isLoading || authLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
   

@@ -25,44 +25,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
-      setLoading(true); 
-      setSessionReady(false); // Reset session readiness on any auth change
       setUser(newUser);
+      setSessionReady(false); // Always reset session readiness on auth change.
+      setLoading(true); // Always enter loading state on auth change.
 
-      try {
-        if (newUser) {
+      if (newUser) {
+        // User is logging in or session is being refreshed.
+        try {
           const token = await newUser.getIdToken();
           const response = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
           });
 
-          if (!response.ok) {
+          if (response.ok) {
+            setSessionReady(true); // Server session is established.
+          } else {
+            // Failed to create server session. This is a critical error.
             toast({
               variant: 'destructive',
               title: 'Session Error',
-              description: 'Could not synchronize your session with the server. Please try logging in again.'
+              description: 'Could not synchronize your session. Please try logging in again.'
             });
-            await firebaseSignOut(auth);
-          } else {
-            setSessionReady(true); // SERVER SESSION IS NOW READY
+            await firebaseSignOut(auth); // Sign out to prevent inconsistent state.
+            setUser(null);
+            setSessionReady(false);
           }
-        } else {
-          // User is logged out, clear the server session and session ready state.
-          await fetch('/api/logout', { method: 'POST' });
+        } catch (error) {
+          console.error("Auth session sync error:", error);
+          toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Your session could not be synchronized with the server.',
+          });
+          await firebaseSignOut(auth);
+          setUser(null);
           setSessionReady(false);
+        } finally {
+          setLoading(false); // Auth flow for this user is complete.
         }
-      } catch (error) {
-        console.error("Auth session sync error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Authentication Error',
-          description: 'Your session could not be synchronized with the server. Please try signing in again.',
-        });
-        await firebaseSignOut(auth);
+      } else {
+        // User is null, they are logged out.
+        await fetch('/api/logout', { method: 'POST' });
         setSessionReady(false);
-      } finally {
-        setLoading(false);
+        setLoading(false); // Auth flow is complete (user is confirmed null).
       }
     });
 
