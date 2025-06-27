@@ -23,6 +23,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
+      // Set loading to true at the start of any auth change to prevent race conditions
+      setLoading(true); 
       setUser(newUser);
 
       try {
