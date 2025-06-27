@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onIdTokenChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -20,63 +19,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // If Firebase isn't configured, don't attempt to set up an auth listener.
-    if (!auth) {
-        setLoading(false);
-        return;
-    }
-
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
-      setLoading(false);
       setUser(newUser);
+      setLoading(false);
       
       if (newUser) {
         const token = await newUser.getIdToken();
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred during login.' }));
-                toast({
-                    variant: "destructive",
-                    title: "Server Authentication Failed",
-                    description: (
-                      <div>
-                        <p>{errorData.message || "Could not create a secure session."}</p>
-                        {errorData.url && (
-                           <a href={errorData.url} target="_blank" rel="noopener noreferrer" className="underline mt-2 inline-block font-semibold">
-                            {errorData.urlText || "Click here for more info"}
-                          </a>
-                        )}
-                      </div>
-                    )
-                });
-            }
-        } catch (e) {
-            toast({
-                variant: "destructive",
-                title: "Network Error",
-                description: "Failed to connect to the server for authentication.",
-            });
-        }
+        await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
       } else {
-         // User is logged out, clear the session cookie
          await fetch('/api/logout', { method: 'POST' });
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   const logout = async () => {
-    if (auth) {
-      await firebaseSignOut(auth);
-    }
-    // The onIdTokenChanged listener will handle the API logout call and routing
+    await firebaseSignOut(auth);
     router.push('/');
   };
 

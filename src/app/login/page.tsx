@@ -3,15 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, firebaseError } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { LogIn, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,19 +23,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!auth) {
-      toast({
-        variant: 'destructive',
-        title: 'Configuration Error',
-        description: firebaseError,
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard'); // Redirect to dashboard on successful login
+      router.push('/dashboard');
       toast({
         title: 'Success!',
         description: 'You have been logged in.',
@@ -51,31 +40,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-  
-  if (firebaseError && !auth) {
-    return (
-        <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] bg-background p-4">
-            <Card className="w-full max-w-lg">
-                 <CardHeader>
-                     <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive h-6 w-6"/> Application Not Configured</CardTitle>
-                     <CardDescription>The connection to the authentication service could not be established.</CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                    <Alert variant="destructive">
-                        <AlertTitle>Error Details</AlertTitle>
-                        <AlertDescription>
-                            {firebaseError}
-                        </AlertDescription>
-                    </Alert>
-                 </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">If you are the developer, please ensure all `NEXT_PUBLIC_FIREBASE_*` variables are set correctly in your `.env` file.</p>
-                 </CardFooter>
-            </Card>
-        </div>
-    );
-  }
-
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] bg-background p-4">
