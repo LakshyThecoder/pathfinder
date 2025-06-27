@@ -20,6 +20,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
+    // If Firebase isn't configured, don't attempt to set up an auth listener.
+    if (!auth) {
+        setLoading(false);
+        return;
+    }
+
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
       setLoading(false);
       setUser(newUser);
@@ -67,7 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = async () => {
-    await firebaseSignOut(auth);
+    if (auth) {
+      await firebaseSignOut(auth);
+    }
     // The onIdTokenChanged listener will handle the API logout call and routing
     router.push('/');
   };

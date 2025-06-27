@@ -8,8 +8,10 @@ const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
+const hasAdminConfig = projectId && clientEmail && privateKey;
+
 if (!admin.apps.length) {
-    if (projectId && clientEmail && privateKey) {
+    if (hasAdminConfig) {
         try {
             app = admin.initializeApp({
                 credential: admin.credential.cert({
@@ -23,11 +25,11 @@ if (!admin.apps.length) {
         }
     } else {
         console.warn(
-`[Firebase Admin] SDK not configured. Server-side features like session management will not work.
-Please ensure the following environment variables are set in your .env file:
-- NEXT_PUBLIC_FIREBASE_PROJECT_ID
-- FIREBASE_CLIENT_EMAIL
-- FIREBASE_PRIVATE_KEY
+`[Firebase Admin] SDK NOT CONFIGURED. Server-side features will not work.
+Reason: Missing one or more required environment variables.
+- NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${projectId ? 'OK' : 'MISSING'}
+- FIREBASE_CLIENT_EMAIL: ${clientEmail ? 'OK' : 'MISSING'}
+- FIREBASE_PRIVATE_KEY: ${privateKey ? 'OK' : 'MISSING'}
 You can get these from your Firebase project settings under "Service accounts".`
         );
     }

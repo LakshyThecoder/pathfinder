@@ -1,8 +1,8 @@
 'use client';
 // Import the functions you need from the SDKs you need
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -18,9 +18,24 @@ const firebaseConfig = {
 };
 
 
-// Initialize Firebase for client-side
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let firebaseError: string | undefined;
 
-export { app, auth, db };
+// Check if the necessary client-side config values are present.
+// This prevents the app from crashing if the .env file is not configured.
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    firebaseError = "Firebase is not configured. Please add your Firebase project credentials to the .env file. You can find them in your Firebase project's web app settings.";
+} else {
+    try {
+        app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        auth = getAuth(app);
+        db = getFirestore(app);
+    } catch (e: any) {
+        // This will catch errors like "invalid-api-key" during initialization.
+        firebaseError = `Firebase initialization failed: ${e.message}. Please check your Firebase project credentials in the .env file.`;
+    }
+}
+
+export { app, auth, db, firebaseError };
