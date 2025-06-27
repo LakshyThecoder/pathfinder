@@ -32,10 +32,17 @@ if (getApps().length === 0) {
   app = getApp();
 }
 
-// @ts-ignore
-auth = getAuth(app);
-// @ts-ignore
-db = getFirestore(app);
+try {
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch (e) {
+    console.error("Error initializing Firebase Auth or Firestore on the client.", e)
+    // @ts-ignore
+    auth = {};
+    // @ts-ignore
+    db = {};
+}
+
 
 const googleProvider = new GoogleAuthProvider();
 
