@@ -4,8 +4,8 @@ import { Share2, Bookmark, Star, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCallback } from 'react';
 
 interface RoadmapControlsProps {
