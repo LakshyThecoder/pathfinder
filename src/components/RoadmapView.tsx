@@ -71,42 +71,21 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   const [isChatbotOpen, setChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, sessionReady } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
 
   useEffect(() => {
-    // Wait for auth to finish loading before doing anything
-    if (authLoading) {
-      return;
-    }
-
-    // If generating a new roadmap via query, we must have a user object.
-    // This prevents a race condition on page load where the query exists
-    // but the user context hasn't been populated yet.
-    if (query && !user) {
-      return;
-    }
-
-    // Reset state on new query or id
-    setRoadmapData(null);
-    setIsLoading(true);
-    setNodeStatuses({});
-
     async function fetchRoadmap() {
+      setIsLoading(true);
       let result: StoredRoadmap | { error: string };
+      
       if (roadmapId) {
         result = await getStoredRoadmap(roadmapId);
       } else if (query) {
         result = await getAiRoadmap(query);
       } else {
-        setIsLoading(false);
-        toast({
-          variant: 'destructive',
-          title: 'No roadmap specified',
-          description: 'Please provide a topic to generate a roadmap.',
-        });
         router.push('/');
         return;
       }
@@ -123,16 +102,40 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
         setRoadmapData(result);
         setNodeStatuses(result.nodeStatuses || {});
         
-        // If a new roadmap was generated (with a query),
-        // update the URL to use its persistent ID instead of the query param.
         if (query && result.id) {
           router.replace(`/roadmap?id=${result.id}`, { scroll: false });
         }
       }
     }
 
-    fetchRoadmap();
-  }, [query, roadmapId, toast, router, user, authLoading]);
+    // Guard 1: Wait for the auth library to settle its initial state.
+    if (authLoading) {
+      return; 
+    }
+
+    // After auth has loaded, decide what to do.
+    if (query) {
+      // For new roadmaps, we must have a user AND a ready server session.
+      if (user && sessionReady) {
+        fetchRoadmap();
+      } else if (!user) {
+        // If there's no user object, they are definitively logged out.
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Required',
+            description: 'You must be logged in to generate a new roadmap.',
+        });
+        router.push('/');
+      }
+      // If `user` exists but `sessionReady` is false, we do nothing and let the effect re-run when `sessionReady` changes.
+    } else if (roadmapId) {
+      // For existing roadmaps, we can always try to fetch. The server handles auth.
+      fetchRoadmap();
+    } else {
+      // Invalid state: no query or ID.
+      router.push('/');
+    }
+  }, [query, roadmapId, user, authLoading, sessionReady, toast, router]);
 
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
@@ -157,11 +160,10 @@ export default function RoadmapView({ query, roadmapId }: { query?: string, road
   }, [nodeStatuses, roadmapData]);
 
 
-  if (authLoading || isLoading || !roadmapData) {
+  if (isLoading || !roadmapData) {
     return <RoadmapLoading />;
   }
   
-  // The user is guaranteed to be logged in and the roadmap to have an ID at this point.
   const isSaved = !!roadmapData.id;
 
   return (

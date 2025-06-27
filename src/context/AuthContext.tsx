@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  sessionReady: boolean;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
@@ -18,13 +19,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
-      // Set loading to true at the start of any auth change to prevent race conditions
       setLoading(true); 
+      setSessionReady(false); // Reset session readiness on any auth change
       setUser(newUser);
 
       try {
@@ -42,10 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               description: 'Could not synchronize your session with the server. Please try logging in again.'
             });
             await firebaseSignOut(auth);
+          } else {
+            setSessionReady(true); // SERVER SESSION IS NOW READY
           }
         } else {
-          // User is logged out, so clear the server session.
+          // User is logged out, clear the server session and session ready state.
           await fetch('/api/logout', { method: 'POST' });
+          setSessionReady(false);
         }
       } catch (error) {
         console.error("Auth session sync error:", error);
@@ -54,11 +59,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           title: 'Authentication Error',
           description: 'Your session could not be synchronized with the server. Please try signing in again.',
         });
-        // Since we don't know the state, force a sign-out to be safe
         await firebaseSignOut(auth);
+        setSessionReady(false);
       } finally {
-        // This ensures loading is false only after the initial user check AND
-        // the server session sync attempt has completed.
         setLoading(false);
       }
     });
@@ -92,6 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     user,
     loading,
+    sessionReady,
     logout,
     signInWithGoogle,
   };
