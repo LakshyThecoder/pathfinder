@@ -14,6 +14,8 @@ import type { StoredRoadmap } from '@/types';
 import type { DailyChallengeOutput } from '@/ai/flows/suggestion-generator';
 import PageLoading from '@/components/PageLoading';
 
+type ClientRoadmap = Omit<StoredRoadmap, 'createdAt'> & { createdAt: string };
+
 interface DashboardData {
     stats: {
         roadmapsCreated: number;
@@ -21,7 +23,7 @@ interface DashboardData {
         averageProgress: number;
         topicDistribution: { name: string; value: number }[];
     };
-    recentRoadmaps: StoredRoadmap[];
+    recentRoadmaps: ClientRoadmap[];
 }
 
 export default function DashboardPage() {
@@ -137,7 +139,7 @@ export default function DashboardPage() {
                                         <div>
                                             <p className="font-semibold">{roadmap.title}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                Created on {new Date(roadmap.createdAt?.toDate()).toLocaleDateString()}
+                                                Created on {new Date(roadmap.createdAt).toLocaleDateString()}
                                             </p>
                                         </div>
                                         <Button variant="outline" size="sm" asChild>

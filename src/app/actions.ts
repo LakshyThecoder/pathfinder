@@ -92,7 +92,6 @@ export async function updateNodeStatusAction(roadmapId: string, nodeId: string, 
         return { error: 'Authentication required.' };
     }
     try {
-        // We could add another auth check here to ensure the user owns the roadmap
         await updateNodeStatusInDb(roadmapId, nodeId, status);
         return { success: true };
     } catch (e: any) {
@@ -108,14 +107,18 @@ export async function getDashboardDataAction() {
     }
 
     try {
-        const [stats, recentRoadmaps] = await Promise.all([
-            getDashboardStats(userId),
-            getUserRoadmaps(userId).then(r => r.slice(0, 3)) // Get top 3 recent
-        ]);
+        const roadmaps = await getUserRoadmaps(userId);
+        const stats = await getDashboardStats(userId, roadmaps);
+        const recentRoadmaps = roadmaps.slice(0, 3);
+
+        const serializableRecentRoadmaps = recentRoadmaps.map(roadmap => ({
+            ...roadmap,
+            createdAt: roadmap.createdAt.toDate().toISOString(),
+        }));
         
         return {
             stats,
-            recentRoadmaps,
+            recentRoadmaps: serializableRecentRoadmaps,
         };
 
     } catch(e: any) {
@@ -166,7 +169,11 @@ export async function getHistoryAction() {
   }
   try {
     const roadmaps = await getUserRoadmaps(userId);
-    return { roadmaps };
+    const serializableRoadmaps = roadmaps.map(roadmap => ({
+        ...roadmap,
+        createdAt: roadmap.createdAt.toDate().toISOString(),
+    }));
+    return { roadmaps: serializableRoadmaps };
   } catch (e: any) {
     console.error("Error fetching history:", e);
     return { error: e.message || "Could not load history." };

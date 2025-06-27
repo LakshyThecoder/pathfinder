@@ -56,10 +56,10 @@ export async function updateNodeStatus(roadmapId: string, nodeId: string, status
 }
 
 
-export async function getDashboardStats(userId: string) {
-    const roadmaps = await getUserRoadmaps(userId);
+export async function getDashboardStats(userId: string, roadmaps?: StoredRoadmap[]) {
+    const userRoadmaps = roadmaps || await getUserRoadmaps(userId);
 
-    if (roadmaps.length === 0) {
+    if (userRoadmaps.length === 0) {
         return {
             roadmapsCreated: 0,
             skillsCompleted: 0,
@@ -72,7 +72,7 @@ export async function getDashboardStats(userId: string) {
     let totalProgressSum = 0;
     const topicCounts: Record<string, number> = {};
 
-    roadmaps.forEach(roadmap => {
+    userRoadmaps.forEach(roadmap => {
         const statuses = Object.values(roadmap.nodeStatuses || {});
         const completed = statuses.filter(s => s === 'completed').length;
         const skipped = statuses.filter(s => s === 'skipped').length;
@@ -96,12 +96,12 @@ export async function getDashboardStats(userId: string) {
         topicCounts[category] = (topicCounts[category] || 0) + 1;
     });
 
-    const averageProgress = Math.round(totalProgressSum / roadmaps.length);
+    const averageProgress = roadmaps && roadmaps.length > 0 ? Math.round(totalProgressSum / roadmaps.length) : 0;
 
     const topicDistribution = Object.entries(topicCounts).map(([name, value]) => ({ name, value }));
     
     return {
-        roadmapsCreated: roadmaps.length,
+        roadmapsCreated: userRoadmaps.length,
         skillsCompleted,
         averageProgress,
         topicDistribution,

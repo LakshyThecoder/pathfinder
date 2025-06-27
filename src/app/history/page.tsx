@@ -14,10 +14,13 @@ import PageLoading from '@/components/PageLoading';
 
 export const dynamic = 'force-dynamic';
 
+// The data from server actions will have Timestamps serialized to strings
+type ClientRoadmap = Omit<StoredRoadmap, 'createdAt'> & { createdAt: string };
+
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
-  const [history, setHistory] = useState<StoredRoadmap[]>([]);
-  const [filteredHistory, setFilteredHistory] = useState<StoredRoadmap[]>([]);
+  const [history, setHistory] = useState<ClientRoadmap[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<ClientRoadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -25,10 +28,9 @@ export default function HistoryPage() {
     if (user) {
       setLoading(true);
       getHistoryAction().then(data => {
-        if (!data.error) {
-          const roadmaps = (data.roadmaps || []) as StoredRoadmap[];
-          setHistory(roadmaps);
-          setFilteredHistory(roadmaps);
+        if (!data.error && data.roadmaps) {
+          setHistory(data.roadmaps as ClientRoadmap[]);
+          setFilteredHistory(data.roadmaps as ClientRoadmap[]);
         }
         setLoading(false);
       });
@@ -90,8 +92,8 @@ export default function HistoryPage() {
                 <CardDescription>Original query: "{item.query}"</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                 {item.createdAt?.toDate && (
-                    <p className="text-sm text-muted-foreground">Created on: {new Date(item.createdAt.toDate()).toLocaleDateString()}</p>
+                 {item.createdAt && (
+                    <p className="text-sm text-muted-foreground">Created on: {new Date(item.createdAt).toLocaleDateString()}</p>
                 )}
               </CardContent>
               <CardFooter>
