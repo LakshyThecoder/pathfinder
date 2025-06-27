@@ -9,6 +9,8 @@ import { getAiRoadmap } from '@/app/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import LoginPromptDialog from './LoginPromptDialog';
 
 function RoadmapLoading() {
   return (
@@ -59,8 +61,11 @@ export default function RoadmapView({ query }: { query: string }) {
   const [roadmapData, setRoadmapData] = useState<RoadmapNodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNodeData | null>(null);
   const [isChatbotOpen, setChatbotOpen] = useState(false);
+  const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
 
   useEffect(() => {
     setLoading(true);
@@ -85,7 +90,11 @@ export default function RoadmapView({ query }: { query: string }) {
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
     setSelectedNode(node);
-    setChatbotOpen(true);
+    if (!user) {
+        setLoginDialogOpen(true);
+    } else {
+        setChatbotOpen(true);
+    }
   };
 
   if (loading) {
@@ -112,6 +121,7 @@ export default function RoadmapView({ query }: { query: string }) {
         selectedNode={selectedNode}
         query={query}
       />
+      <LoginPromptDialog isOpen={isLoginDialogOpen} onOpenChange={setLoginDialogOpen} />
     </div>
   );
 }
