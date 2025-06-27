@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onIdTokenChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -13,22 +14,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Function to set a cookie
-function setCookie(name: string, value: string, days: number) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
-}
-
-// Function to remove a cookie
-function removeCookie(name: string) {
-    document.cookie = name + '=; Max-Age=-99999999;';  
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,28 +21,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (newUser) => {
-      setUser(newUser);
       setLoading(false);
+      setUser(newUser);
       
       if (newUser) {
         const token = await newUser.getIdToken();
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) {
-            console.error('Failed to create session cookie');
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                // If the server returns an error, show a toast to the user.
+                const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred during login.' }));
+                toast({
+                    variant: "destructive",
+                    title: "Server Authentication Failed",
+                    description: errorData.message || "Could not create a secure session. Please check server configuration.",
+                });
+            }
+        } catch (e) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: "Failed to connect to the server for authentication.",
+            });
         }
       } else {
+         // User is logged out, clear the session cookie
          await fetch('/api/logout', { method: 'POST' });
       }
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   const logout = async () => {
     await firebaseSignOut(auth);
+    // The onIdTokenChanged listener will handle the API logout call and routing
     router.push('/');
   };
 
