@@ -33,7 +33,7 @@ export async function roadmapInsightGenerator(input: RoadmapInsightInput): Promi
 
 const prompt = ai.definePrompt({
   name: 'roadmapInsightPrompt',
-  model: 'gemini-pro',
+  model: 'googleai/gemini-pro',
   input: {schema: RoadmapInsightInputSchema},
   output: {schema: RoadmapInsightOutputSchema},
   prompt: `You are an expert learning advisor. For the given roadmap node topic, provide a detailed response in the required structured JSON format.

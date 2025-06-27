@@ -34,7 +34,7 @@ export async function getFollowUpAnswer(input: FollowUpInput): Promise<FollowUpO
 
 const prompt = ai.definePrompt({
   name: 'followUpQuestionPrompt',
-  model: 'gemini-pro',
+  model: 'googleai/gemini-pro',
   input: { schema: FollowUpInputSchema },
   output: { schema: FollowUpOutputSchema },
   prompt: `You are an expert learning advisor. The user is currently studying "{{nodeContent}}". They have asked the following follow-up question: "{{question}}". 

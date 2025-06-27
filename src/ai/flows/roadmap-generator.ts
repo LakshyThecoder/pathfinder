@@ -61,7 +61,7 @@ export async function generateRoadmap(input: GenerateRoadmapInput): Promise<Gene
 
 const prompt = ai.definePrompt({
     name: 'roadmapGeneratorPrompt',
-    model: 'gemini-pro',
+    model: 'googleai/gemini-pro',
     input: {schema: GenerateRoadmapInputSchema},
     output: { schema: GenerateRoadmapAIOutputSchema },
     prompt: `You are an expert curriculum designer. Your task is to generate a high-level learning roadmap for "{{query}}".
