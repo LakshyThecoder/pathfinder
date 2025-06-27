@@ -3,7 +3,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration read from environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -18,13 +18,23 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+// Initialize Firebase
 if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
+  // Check if all config keys are present
+  if (Object.values(firebaseConfig).some(value => !value)) {
+    console.error("Firebase configuration is incomplete. Check your .env.local file for NEXT_PUBLIC_ variables.");
+    // @ts-ignore
+    app = {}; // Assign a dummy object to prevent further errors on the client.
+  } else {
+    app = initializeApp(firebaseConfig);
+  }
 } else {
   app = getApp();
 }
 
+// @ts-ignore
 auth = getAuth(app);
+// @ts-ignore
 db = getFirestore(app);
 
 const googleProvider = new GoogleAuthProvider();
