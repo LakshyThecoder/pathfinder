@@ -196,13 +196,13 @@ export default function Home() {
             <Button asChild variant="outline" className="bg-transparent backdrop-blur-md">
                 <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
                     <Linkedin className="mr-2 h-5 w-5" />
-                    Follow Us on LinkedIn
+                    Follow QS on Linkedin
                 </a>
             </Button>
             <Button asChild variant="outline" className="bg-transparent backdrop-blur-md">
                 <a href="https://www.linkedin.com/in/lakshy/" target="_blank" rel="noopener noreferrer">
                     <Linkedin className="mr-2 h-5 w-5" />
-                    Follow the Developer on LinkedIn
+                    Follow me on Linkedin
                 </a>
             </Button>
         </div>
