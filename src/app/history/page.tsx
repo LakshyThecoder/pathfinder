@@ -10,6 +10,7 @@ import Link from "next/link";
 import PageLoading from '@/components/PageLoading';
 import type { StoredRoadmap } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { getHistoryAction } from '../actions';
 
 
 export default function HistoryPage() {
@@ -20,20 +21,36 @@ export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    setLoading(true);
-    // History is now always loaded from local storage, regardless of login state.
-    try {
-      const localHistoryJson = localStorage.getItem('local_roadmap_history');
-      const localHistory = localHistoryJson ? JSON.parse(localHistoryJson) : [];
-      setHistory(localHistory);
-      setFilteredHistory(localHistory);
-    } catch (e) {
-      console.error("Failed to parse local history", e);
-      setHistory([]);
-      setFilteredHistory([]);
+    const getLocalHistory = (): Partial<StoredRoadmap>[] => {
+      try {
+        const localHistoryJson = localStorage.getItem('local_roadmap_history');
+        return localHistoryJson ? JSON.parse(localHistoryJson) : [];
+      } catch (e) {
+        console.error("Failed to parse local history", e);
+        return [];
+      }
+    };
+    
+    const fetchHistory = async () => {
+      setLoading(true);
+      if (user) {
+        const serverHistory = await getHistoryAction();
+        if (!('error' in serverHistory)) {
+          setHistory(serverHistory);
+        } else {
+          console.error("Error fetching server history:", serverHistory.error);
+          setHistory([]); // Show empty if server fetch fails for logged-in user
+        }
+      } else {
+        setHistory(getLocalHistory());
+      }
+      setLoading(false);
+    };
+
+    if (!authLoading) {
+      fetchHistory();
     }
-    setLoading(false);
-  }, []);
+  }, [user, authLoading]);
 
   useEffect(() => {
     const results = history.filter(item =>
@@ -51,6 +68,15 @@ export default function HistoryPage() {
         </div>
     );
   }
+  
+  const descriptionText = user 
+    ? "All roadmaps saved to your account, available on any device."
+    : "Your recently generated roadmaps, saved in this browser.";
+    
+  const emptyText = user
+    ? "You haven't created any roadmaps on this account yet."
+    : "Roadmaps you create will be saved here in your browser.";
+
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -58,7 +84,7 @@ export default function HistoryPage() {
         <HistoryIcon className="h-12 w-12 text-primary mb-4" />
         <h1 className="text-4xl font-bold">Your Roadmap History</h1>
         <p className="text-muted-foreground mt-2 max-w-xl">
-            Your recently generated roadmaps, saved in this browser.
+            {descriptionText}
         </p>
       </div>
       <div className="flex items-center gap-4 mb-8 max-w-lg mx-auto">
@@ -105,18 +131,13 @@ export default function HistoryPage() {
             <p className="text-muted-foreground mt-2 mb-4">
               {searchTerm 
                 ? "No roadmaps match your search criteria."
-                : "Roadmaps you create will be saved here in your browser."
+                : emptyText
               }
             </p>
             {!searchTerm && (
                 <Button asChild>
                     <Link href="/">Start a New Roadmap</Link>
                 </Button>
-            )}
-            {!user && !searchTerm && (
-              <p className="text-sm text-muted-foreground mt-4">
-                <Link href="/login" className="underline hover:text-primary">Sign in</Link> to save roadmaps to your account to view dashboard stats.
-              </p>
             )}
         </div>
       )}

@@ -95,6 +95,24 @@ export async function getSuggestion(input: SuggestionInput): Promise<SuggestionO
   }
 }
 
+export async function getHistoryAction(): Promise<StoredRoadmap[] | { error: string }> {
+    try {
+        const decodedToken = await getDecodedIdToken();
+        if (!decodedToken) {
+            // This should be handled by the client, which will fall back to local storage.
+            return { error: "You must be logged in to view your account history." };
+        }
+        const roadmaps = await getUserRoadmaps(decodedToken.uid);
+        return roadmaps.map(roadmap => ({
+            ...roadmap,
+            createdAt: (roadmap.createdAt as any).toDate().toISOString(),
+        }));
+    } catch(e: any) {
+        console.error("Error in getHistoryAction:", e);
+        return { error: e.message || "Failed to fetch history." };
+    }
+}
+
 export async function getDashboardDataAction(): Promise<{ stats: any, recentRoadmaps: any[] } | { error: string }> {
     try {
         const decodedToken = await getDecodedIdToken();
