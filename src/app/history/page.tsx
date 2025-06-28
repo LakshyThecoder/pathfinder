@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Search, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import PageLoading from '@/components/PageLoading';
-import { getHistoryAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 
@@ -21,38 +20,20 @@ export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (authLoading) return; // Wait until auth state is determined
-
     setLoading(true);
-    const fetchHistory = async () => {
-        if (user) {
-            const result = await getHistoryAction();
-            if (Array.isArray(result)) {
-                setHistory(result);
-                setFilteredHistory(result);
-            } else {
-                console.error("Failed to fetch history", result.error);
-                setHistory([]);
-                setFilteredHistory([]);
-            }
-        } else {
-            // Load from local storage for logged-out users
-            try {
-                const localHistoryJson = localStorage.getItem('local_roadmap_history');
-                const localHistory = localHistoryJson ? JSON.parse(localHistoryJson) : [];
-                setHistory(localHistory);
-                setFilteredHistory(localHistory);
-            } catch (e) {
-                console.error("Failed to parse local history", e);
-                setHistory([]);
-                setFilteredHistory([]);
-            }
-        }
-        setLoading(false);
-    };
-    
-    fetchHistory();
-  }, [user, authLoading]);
+    // History is now always loaded from local storage, regardless of login state.
+    try {
+      const localHistoryJson = localStorage.getItem('local_roadmap_history');
+      const localHistory = localHistoryJson ? JSON.parse(localHistoryJson) : [];
+      setHistory(localHistory);
+      setFilteredHistory(localHistory);
+    } catch (e) {
+      console.error("Failed to parse local history", e);
+      setHistory([]);
+      setFilteredHistory([]);
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     const results = history.filter(item =>
@@ -63,7 +44,7 @@ export default function HistoryPage() {
   }, [searchTerm, history]);
 
 
-  if (authLoading || loading) {
+  if (authLoading) {
      return (
         <div className="container mx-auto py-10 px-4">
             <PageLoading message="Loading your roadmap history..." />
@@ -77,7 +58,7 @@ export default function HistoryPage() {
         <HistoryIcon className="h-12 w-12 text-primary mb-4" />
         <h1 className="text-4xl font-bold">Your Roadmap History</h1>
         <p className="text-muted-foreground mt-2 max-w-xl">
-            {user ? "Revisit your learning journeys, saved to your account." : "Your recent roadmaps, saved in this browser."}
+            Your recently generated roadmaps, saved in this browser.
         </p>
       </div>
       <div className="flex items-center gap-4 mb-8 max-w-lg mx-auto">
@@ -91,7 +72,11 @@ export default function HistoryPage() {
           />
         </div>
       </div>
-      {filteredHistory.length > 0 ? (
+      {loading ? (
+        <div className="text-center py-16">
+            <PageLoading message="Loading history..."/>
+        </div>
+      ) : filteredHistory.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredHistory.map((item) => (
             <Card key={item.id} className="hover:shadow-lg hover:border-primary/50 transition-all flex flex-col">
@@ -120,7 +105,7 @@ export default function HistoryPage() {
             <p className="text-muted-foreground mt-2 mb-4">
               {searchTerm 
                 ? "No roadmaps match your search criteria."
-                : user ? "You haven't generated any roadmaps yet." : "Roadmaps you create will be saved here in your browser."
+                : "Roadmaps you create will be saved here in your browser."
               }
             </p>
             {!searchTerm && (
@@ -130,7 +115,7 @@ export default function HistoryPage() {
             )}
             {!user && !searchTerm && (
               <p className="text-sm text-muted-foreground mt-4">
-                <Link href="/login" className="underline hover:text-primary">Sign in</Link> to save your history across devices.
+                <Link href="/login" className="underline hover:text-primary">Sign in</Link> to save roadmaps to your account to view dashboard stats.
               </p>
             )}
         </div>

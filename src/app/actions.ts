@@ -15,7 +15,7 @@ export async function getAiRoadmap(query: string): Promise<StoredRoadmap | Roadm
       const decodedToken = await getDecodedIdToken();
       const generatedRoadmapData = await generateRoadmap({ query });
 
-      // If user is logged in, save the roadmap to their account
+      // If user is logged in, save the roadmap to their account for dashboard stats
       if (decodedToken) {
         const savedRoadmap = await saveRoadmap(decodedToken.uid, generatedRoadmapData, query);
         return savedRoadmap;
@@ -54,7 +54,8 @@ export async function updateNodeStatusAction(roadmapId: string, nodeId: string, 
     try {
         const decodedToken = await getDecodedIdToken();
         if (!decodedToken) {
-            return { error: "You must be logged in." };
+            // This is for guest users with temporary roadmaps. Progress is not saved.
+            return { success: true };
         }
         await updateNodeStatusInDb(roadmapId, nodeId, status);
         return { success: true };
@@ -63,21 +64,6 @@ export async function updateNodeStatusAction(roadmapId: string, nodeId: string, 
         return { error: e.message || "Failed to update status." };
     }
 }
-
-export async function getHistoryAction(): Promise<StoredRoadmap[] | { error: string }> {
-    try {
-        const decodedToken = await getDecodedIdToken();
-        if (!decodedToken) {
-            return { error: "You must be logged in." };
-        }
-        const roadmaps = await getUserRoadmaps(decodedToken.uid);
-        return roadmaps.map(r => ({ ...r, createdAt: (r.createdAt as any).toDate().toISOString() }));
-    } catch (e: any) {
-        console.error("Error in getHistoryAction:", e);
-        return { error: e.message || "Failed to fetch history." };
-    }
-}
-
 
 export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<RoadmapInsightOutput | { error: string }> {
   try {

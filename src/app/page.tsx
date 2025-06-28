@@ -39,39 +39,37 @@ export default function Home() {
       return;
     }
     
-    // `StoredRoadmap` has `userId`, temporary `RoadmapNodeData` does not.
-    if ("userId" in result) {
-        // Logged-in user's roadmap is saved to DB, so just redirect.
-        router.push(`/roadmap?id=${result.id}`);
-    } else {
-        // Guest user, save to browser storage
-        try {
-            // Save temporary roadmap to session storage for viewing
-            sessionStorage.setItem(`temp_roadmap_${result.id}`, JSON.stringify(result));
-            
-            // Save metadata to local storage for history page
-            const historyItem = {
-                id: result.id,
-                title: result.title,
-                query: topic.trim(),
-                createdAt: new Date().toISOString(),
-            };
-    
-            const existingHistoryJSON = localStorage.getItem('local_roadmap_history');
-            const existingHistory = existingHistoryJSON ? JSON.parse(existingHistoryJSON) : [];
-            const newHistory = [historyItem, ...existingHistory].slice(0, 50); // Keep history to a reasonable size
-            localStorage.setItem('local_roadmap_history', JSON.stringify(newHistory));
-
-            router.push(`/roadmap?id=${result.id}`);
-        } catch (error) {
-            console.error("Failed to save temp roadmap:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Browser Error',
-                description: 'Could not save the temporary roadmap in your browser. Local storage may be full or disabled.',
-            });
-            setIsLoading(false);
+    try {
+        // For guest users, the roadmap is not in the DB. Save it to session storage
+        // so the roadmap page can load it without a DB call.
+        if (!("userId" in result)) {
+             sessionStorage.setItem(`temp_roadmap_${result.id}`, JSON.stringify(result));
         }
+       
+        // ALWAYS save metadata to local storage for the history page.
+        const historyItem = {
+            id: result.id,
+            title: result.title,
+            query: topic.trim(),
+            createdAt: new Date().toISOString(),
+        };
+
+        const existingHistoryJSON = localStorage.getItem('local_roadmap_history');
+        const existingHistory = existingHistoryJSON ? JSON.parse(existingHistoryJSON) : [];
+        const newHistory = [historyItem, ...existingHistory].slice(0, 50); // Keep history to a reasonable size
+        localStorage.setItem('local_roadmap_history', JSON.stringify(newHistory));
+
+        // Redirect to the roadmap page.
+        router.push(`/roadmap?id=${result.id}`);
+
+    } catch (error) {
+        console.error("Failed to save to browser storage:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Browser Error',
+            description: 'Could not save the roadmap in your browser. Local storage may be full or disabled.',
+        });
+        setIsLoading(false);
     }
   };
 

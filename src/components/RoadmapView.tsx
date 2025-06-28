@@ -11,6 +11,7 @@ import RoadmapProgress from './RoadmapProgress';
 import { useToast } from '@/hooks/use-toast';
 import PageLoading from '@/components/PageLoading';
 import { getRoadmapAction, updateNodeStatusAction } from '@/app/actions';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RoadmapView({ roadmapId }: { roadmapId?: string }) {
   const [roadmapData, setRoadmapData] = useState<StoredRoadmap | RoadmapNodeData | null>(null);
@@ -20,64 +21,74 @@ export default function RoadmapView({ roadmapId }: { roadmapId?: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !roadmapId) {
-      if (!roadmapId) {
-        toast({
-          title: 'No Roadmap ID',
-          description: 'Please generate a roadmap from the home page.',
-          variant: 'destructive'
-        })
-        router.push('/');
-      }
+    if (authLoading) {
+      // Wait for auth state to be determined before doing anything.
+      return;
+    }
+
+    if (!roadmapId) {
+      toast({
+        title: 'No Roadmap ID',
+        description: 'Please generate a roadmap from the home page.',
+        variant: 'destructive'
+      })
+      router.push('/');
       return;
     }
     
     setIsLoading(true);
 
-    // Try to load from session storage first (for logged-out users)
-    const tempRoadmapJSON = sessionStorage.getItem(`temp_roadmap_${roadmapId}`);
-
-    if (tempRoadmapJSON) {
-        try {
-            const tempRoadmap = JSON.parse(tempRoadmapJSON);
-            setRoadmapData(tempRoadmap);
-            setNodeStatuses({}); // Temporary roadmaps don't have stored statuses
-            setIsLoading(false);
-        } catch (error) {
-            console.error("Failed to parse temporary roadmap from session storage", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load temporary roadmap.' });
-            router.push('/');
+    const loadRoadmap = async () => {
+      // Logged-in users first attempt to fetch from DB.
+      if (user) {
+        const result = await getRoadmapAction(roadmapId);
+        if (!('error' in result)) {
+          setRoadmapData(result);
+          setNodeStatuses(result.nodeStatuses || {});
+          setIsLoading(false);
+          return;
         }
-    } else {
-        // If not in session storage, fetch from the database (for logged-in users)
-        const fetchRoadmap = async () => {
-            const result = await getRoadmapAction(roadmapId);
-            if ('error' in result) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Error Loading Roadmap',
-                    description: result.error,
-                });
-                router.push('/history');
-            } else {
-                setRoadmapData(result);
-                setNodeStatuses(result.nodeStatuses || {});
-            }
-            setIsLoading(false);
-        };
-        fetchRoadmap();
+        // If it fails (e.g., not their roadmap), we fall through to check session storage.
+      }
+
+      // Guest users, or logged-in users who failed the DB fetch, check session storage.
+      const tempRoadmapJSON = sessionStorage.getItem(`temp_roadmap_${roadmapId}`);
+      if (tempRoadmapJSON) {
+          try {
+              const tempRoadmap = JSON.parse(tempRoadmapJSON);
+              setRoadmapData(tempRoadmap);
+              const localStatuses = JSON.parse(localStorage.getItem(`statuses_${roadmapId}`) || '{}');
+              setNodeStatuses(localStatuses);
+              setIsLoading(false);
+          } catch (error) {
+              console.error("Failed to parse roadmap from session storage", error);
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not load temporary roadmap.' });
+              router.push('/');
+          }
+      } else {
+        // If nothing is found anywhere, it's an error.
+        toast({
+            variant: 'destructive',
+            title: 'Error Loading Roadmap',
+            description: "Could not find this roadmap. It may have expired or never existed.",
+        });
+        router.push('/history');
+      }
     }
-  }, [roadmapId, router, toast]);
+    
+    loadRoadmap();
+
+  }, [roadmapId, router, toast, user, authLoading]);
 
   const handleStatusChange = useCallback(async (nodeId: string, status: NodeStatus) => {
-    // Optimistically update local state for a responsive UI
     const newStatuses = { ...nodeStatuses, [nodeId]: status };
     setNodeStatuses(newStatuses);
 
-    // If the roadmap is persistent (has a userId), save the status to the database
-    if (roadmapId && roadmapData && 'userId' in roadmapData) {
+    // If logged in and it's a saved roadmap, update the database.
+    if (user && roadmapId && roadmapData && 'userId' in roadmapData) {
       const result = await updateNodeStatusAction(roadmapId, nodeId, status);
       if (result?.error) {
         toast({
@@ -85,11 +96,13 @@ export default function RoadmapView({ roadmapId }: { roadmapId?: string }) {
           title: 'Failed to save progress',
           description: result.error,
         });
-        // Revert optimistic update on failure
-        setNodeStatuses(nodeStatuses);
+        setNodeStatuses(nodeStatuses); // Revert on failure
       }
+    } else if (roadmapId) {
+      // If not logged in, save progress to local storage for persistence on this device.
+      localStorage.setItem(`statuses_${roadmapId}`, JSON.stringify(newStatuses));
     }
-  }, [nodeStatuses, roadmapId, toast, roadmapData]);
+  }, [nodeStatuses, roadmapId, toast, roadmapData, user]);
 
   const handleNodeSelect = (node: RoadmapNodeData) => {
     setSelectedNode(node);
@@ -105,7 +118,7 @@ export default function RoadmapView({ roadmapId }: { roadmapId?: string }) {
     };
   }, [nodeStatuses, roadmapData]);
 
-  if (isLoading || !roadmapData) {
+  if (isLoading || authLoading || !roadmapData) {
     return <PageLoading message="Loading your roadmap..." />;
   }
   
