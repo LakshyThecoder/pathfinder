@@ -192,11 +192,17 @@ export default function Home() {
           </Button>
         </form>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild variant="outline" className="bg-transparent backdrop-blur-md">
                 <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
                     <Linkedin className="mr-2 h-5 w-5" />
                     Follow Us on LinkedIn
+                </a>
+            </Button>
+            <Button asChild variant="outline" className="bg-transparent backdrop-blur-md">
+                <a href="https://www.linkedin.com/in/lakshy/" target="_blank" rel="noopener noreferrer">
+                    <Linkedin className="mr-2 h-5 w-5" />
+                    Follow the Developer on LinkedIn
                 </a>
             </Button>
         </div>
