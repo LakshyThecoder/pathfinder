@@ -12,7 +12,7 @@ import type { StoredRoadmap, NodeStatus, RoadmapNodeData } from "@/types";
 function handleAiError(e: any, defaultMessage: string): { error: string } {
     console.error("AI Action Error:", e);
     if (e.message && (e.message.includes('429') || e.message.toLowerCase().includes('rate limit'))) {
-        return { error: "You've made too many requests in a short time. Please wait a minute and try again." };
+        return { error: "More than 300,000 requests have been generated today. Please try again tomorrow." };
     }
     return { error: e.message || defaultMessage };
 }
