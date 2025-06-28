@@ -36,7 +36,21 @@ export default function Home() {
 
     try {
       const newId = crypto.randomUUID();
+      // Save the full roadmap data with its unique ID
       localStorage.setItem(`roadmap-${newId}`, JSON.stringify(result));
+
+      // Retrieve, update, and save the history list
+      const history = JSON.parse(localStorage.getItem('roadmap-history') || '[]');
+      const newHistoryEntry = {
+        id: newId,
+        title: result.title,
+        query: topic.trim(),
+        createdAt: new Date().toISOString(),
+      };
+      // Add the new entry to the beginning of the array
+      history.unshift(newHistoryEntry);
+      localStorage.setItem('roadmap-history', JSON.stringify(history));
+      
       router.push(`/roadmap?id=${newId}`);
     } catch (e) {
       toast({
