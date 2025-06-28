@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { marked } from "marked";
 
 interface ChatbotProps {
   isOpen: boolean;
@@ -54,24 +55,24 @@ const InsightCard = ({ icon, title, children }: { icon: React.ReactNode, title: 
             {icon}
             <h4 className="font-semibold text-foreground">{title}</h4>
         </div>
-        <div className="text-sm text-muted-foreground prose prose-sm prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 whitespace-pre-wrap">{children}</div>
+        <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 whitespace-pre-wrap">{children}</div>
     </div>
 );
 
 
-const InitialInsight = ({ insight }: { insight: RoadmapInsightOutput }) => (
+const InitialInsight = ({ insight }: { insight: any }) => (
   <div className="space-y-3">
     <InsightCard icon={<Lightbulb className="h-5 w-5 text-primary" />} title="Key Concept">
-        {insight.keyConcept}
+        <div dangerouslySetInnerHTML={{ __html: insight.keyConcept }} />
     </InsightCard>
     <InsightCard icon={<Zap className="h-5 w-5 text-primary" />} title="Practical Tip">
-        {insight.practicalTip}
+        <div dangerouslySetInnerHTML={{ __html: insight.practicalTip }} />
     </InsightCard>
      <InsightCard icon={<AlertTriangle className="h-5 w-5 text-amber-500" />} title="Common Pitfall">
-        {insight.commonPitfall}
+        <div dangerouslySetInnerHTML={{ __html: insight.commonPitfall }} />
     </InsightCard>
     <InsightCard icon={<BookOpen className="h-5 w-5 text-primary" />} title="Recommended Resources">
-        {insight.resources}
+        <div dangerouslySetInnerHTML={{ __html: insight.resources }} />
     </InsightCard>
     <InsightCard icon={<Clock className="h-5 w-5 text-primary" />} title="Estimated Duration">
         {insight.durationEstimate}
@@ -103,10 +104,17 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
             description: result.error,
           });
         } else {
+            const parsedInsight = {
+                ...result,
+                keyConcept: await marked.parse(result.keyConcept),
+                practicalTip: await marked.parse(result.practicalTip),
+                commonPitfall: await marked.parse(result.commonPitfall),
+                resources: await marked.parse(result.resources),
+            };
           setMessages([{
             id: `insight-${Date.now()}`,
             role: "assistant",
-            content: <InitialInsight insight={result} />,
+            content: <InitialInsight insight={parsedInsight} />,
             isInsight: true,
           }]);
         }
@@ -135,7 +143,8 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
         toast({ variant: "destructive", title: "Error", description: result.error });
         setMessages(prev => prev.slice(0, -1)); 
       } else {
-        const assistantMessage: Message = { id: `assistant-${Date.now()}`, role: "assistant", content: <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1" dangerouslySetInnerHTML={{ __html: result.answer.replace(/\n/g, '<br/>') }} /> };
+        const html = await marked.parse(result.answer);
+        const assistantMessage: Message = { id: `assistant-${Date.now()}`, role: "assistant", content: <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1" dangerouslySetInnerHTML={{ __html: html }} /> };
         setMessages(prev => [...prev, assistantMessage]);
       }
     });
@@ -239,7 +248,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
                              message.role === "assistant" ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground",
                              message.isInsight && "bg-transparent p-0 w-full max-w-full shadow-none"
                              )}>
-                            <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
+                            <div className="text-sm leading-relaxed">{message.content}</div>
                         </div>
 
                         {message.role === "user" && (
