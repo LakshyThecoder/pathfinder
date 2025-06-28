@@ -19,8 +19,10 @@ const RoadmapInsightInputSchema = z.object({
 export type RoadmapInsightInput = z.infer<typeof RoadmapInsightInputSchema>;
 
 const RoadmapInsightOutputSchema = z.object({
-  insight: z.string().describe("A concise, expert insight about the learning topic. This should be a key piece of advice or a mental model."),
-  resources: z.string().describe("A bulleted list of 2-3 recommended resources (e.g., specific tutorials, documentation pages, or courses) as a single string."),
+  keyConcept: z.string().describe("A concise explanation of the single most important concept or mental model for the topic."),
+  practicalTip: z.string().describe("A specific, actionable tip or a mini-exercise the user can do to apply their knowledge."),
+  commonPitfall: z.string().describe("A common mistake or misunderstanding to watch out for, and advice on how to avoid it."),
+  resources: z.string().describe("A markdown-formatted string with a bulleted list of 2-3 specific, high-quality learning resources (e.g., specific tutorials, documentation pages, or courses). Briefly explain why each is recommended."),
   durationEstimate: z
     .string()
     .describe("An estimated duration to achieve a solid understanding of the topic (e.g., '1-2 weeks', '8-10 hours')."),
@@ -36,13 +38,17 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: RoadmapInsightInputSchema},
   output: {schema: RoadmapInsightOutputSchema},
-  prompt: `You are an expert learning advisor. For the given roadmap node topic, provide a detailed response in the required structured JSON format.
+  prompt: `You are an expert learning advisor and curriculum designer. For the given roadmap node topic, provide a detailed, structured response in the required JSON format.
 
 **Roadmap Node:** {{{nodeContent}}}
 
+Your response must be encouraging, clear, and highly practical.
+
 Based on the node topic, provide the following:
-- 'insight': A concise, expert insight about the topic. This should be a key piece of advice, a common pitfall to avoid, or a powerful mental model.
-- 'resources': A string containing a bulleted list of 2-3 specific, high-quality learning resources.
+- 'keyConcept': Explain the single most important concept for this topic in a simple, easy-to-understand way. Use an analogy if helpful.
+- 'practicalTip': Provide a concrete, actionable tip or a small exercise that a learner can do right now to better understand the topic.
+- 'commonPitfall': Describe a common mistake learners make with this topic and explain how to avoid it.
+- 'resources': A string containing a markdown-formatted bulleted list of 2-3 specific, high-quality learning resources. For each resource, add a brief sentence explaining why it's a good choice.
 - 'durationEstimate': A string containing a realistic, estimated time to learn the topic for a beginner (e.g., "1-2 weeks", "8-10 hours").
 `,
 });

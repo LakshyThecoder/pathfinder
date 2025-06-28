@@ -6,10 +6,10 @@ import type { RoadmapNodeData, NodeStatus } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getRoadmapInsight, getFollowUpAnswer } from "@/app/actions";
 import type { RoadmapInsightOutput } from "@/ai/flows/roadmap-insight-generator";
-import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw } from "lucide-react";
+import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw, Zap, Lightbulb, AlertTriangle, BookOpen, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
@@ -24,7 +24,7 @@ interface ChatbotProps {
 }
 
 type Message = {
-  id: number;
+  id: string;
   role: "user" | "assistant";
   content: React.ReactNode;
   isInsight?: boolean;
@@ -37,8 +37,8 @@ const TypingIndicator = () => (
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
   >
-    <Avatar className="h-8 w-8">
-      <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
+    <Avatar className="h-8 w-8 bg-primary/10 border border-primary/20">
+       <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-primary" /></AvatarFallback>
     </Avatar>
     <div className="flex items-center space-x-1 bg-secondary p-3 rounded-lg">
       <div className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -48,20 +48,34 @@ const TypingIndicator = () => (
   </motion.div>
 );
 
+const InsightCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
+    <div className="bg-background/50 p-4 rounded-lg border border-border/50">
+        <div className="flex items-center gap-3 mb-2">
+            {icon}
+            <h4 className="font-semibold text-foreground">{title}</h4>
+        </div>
+        <div className="text-sm text-muted-foreground prose prose-sm prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 whitespace-pre-wrap">{children}</div>
+    </div>
+);
+
+
 const InitialInsight = ({ insight }: { insight: RoadmapInsightOutput }) => (
-  <div className="space-y-4 bg-secondary/50 p-4 rounded-lg border">
-    <div>
-        <h4 className="font-semibold mb-2 text-primary">Key Insight</h4>
-        <p className="text-sm text-muted-foreground">{insight.insight}</p>
-    </div>
-    <div>
-        <h4 className="font-semibold mb-2 text-primary">Recommended Resources</h4>
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.resources}</p>
-    </div>
-    <div>
-        <h4 className="font-semibold mb-2 text-primary">Estimated Duration</h4>
-        <p className="text-sm text-muted-foreground">{insight.durationEstimate}</p>
-    </div>
+  <div className="space-y-3">
+    <InsightCard icon={<Lightbulb className="h-5 w-5 text-primary" />} title="Key Concept">
+        {insight.keyConcept}
+    </InsightCard>
+    <InsightCard icon={<Zap className="h-5 w-5 text-primary" />} title="Practical Tip">
+        {insight.practicalTip}
+    </InsightCard>
+     <InsightCard icon={<AlertTriangle className="h-5 w-5 text-amber-500" />} title="Common Pitfall">
+        {insight.commonPitfall}
+    </InsightCard>
+    <InsightCard icon={<BookOpen className="h-5 w-5 text-primary" />} title="Recommended Resources">
+        {insight.resources}
+    </InsightCard>
+    <InsightCard icon={<Clock className="h-5 w-5 text-primary" />} title="Estimated Duration">
+        {insight.durationEstimate}
+    </InsightCard>
   </div>
 );
 
@@ -89,7 +103,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
           });
         } else {
           setMessages([{
-            id: Date.now(),
+            id: `insight-${Date.now()}`,
             role: "assistant",
             content: <InitialInsight insight={result} />,
             isInsight: true,
@@ -110,7 +124,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
     e.preventDefault();
     if (!input.trim() || isFollowUpPending || !selectedNode) return;
 
-    const userMessage: Message = { id: Date.now(), role: "user", content: input };
+    const userMessage: Message = { id: `user-${Date.now()}`, role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
 
@@ -120,7 +134,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
         toast({ variant: "destructive", title: "Error", description: result.error });
         setMessages(prev => prev.slice(0, -1)); 
       } else {
-        const assistantMessage: Message = { id: Date.now() + 1, role: "assistant", content: result.answer };
+        const assistantMessage: Message = { id: `assistant-${Date.now()}`, role: "assistant", content: <div className="prose prose-sm prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1" dangerouslySetInnerHTML={{ __html: result.answer.replace(/\n/g, '<br/>') }} /> };
         setMessages(prev => [...prev, assistantMessage]);
       }
     });
@@ -133,35 +147,35 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
   };
 
   const statusActions = [
-    { status: 'completed' as NodeStatus, label: 'Complete', icon: Check, className: 'hover:bg-green-500/20 text-green-500' },
-    { status: 'in-progress' as NodeStatus, label: 'In Progress', icon: CircleDashed, className: 'hover:bg-blue-500/20 text-blue-500' },
-    { status: 'skipped' as NodeStatus, label: 'Skip', icon: X, className: 'hover:bg-muted-foreground/20 text-muted-foreground' },
-    { status: 'not-started' as NodeStatus, label: 'Reset', icon: RotateCcw, className: 'hover:bg-amber-500/20 text-amber-500' },
+    { status: 'completed' as NodeStatus, label: 'Complete', icon: Check, className: 'hover:bg-green-500/10 text-green-500 border-green-500/20' },
+    { status: 'in-progress' as NodeStatus, label: 'In Progress', icon: CircleDashed, className: 'hover:bg-blue-500/10 text-blue-500 border-blue-500/20' },
+    { status: 'skipped' as NodeStatus, label: 'Skip', icon: X, className: 'hover:bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20' },
+    { status: 'not-started' as NodeStatus, label: 'Reset', icon: RotateCcw, className: 'hover:bg-amber-500/10 text-amber-500 border-amber-500/20' },
   ];
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side={isMobile ? "bottom" : "right"} className="w-full md:max-w-md lg:max-w-lg p-0 flex flex-col" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <SheetHeader className="p-6 pb-2 border-b">
-          <SheetTitle className="text-2xl flex items-center gap-2"><Bot className="text-primary"/> AI Assistant</SheetTitle>
+      <SheetContent side={isMobile ? "bottom" : "right"} className="w-full md:max-w-md lg:max-w-lg p-0 flex flex-col bg-card/80 backdrop-blur-sm" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <SheetHeader className="p-4 border-b border-border/50">
+          <SheetTitle className="text-xl flex items-center gap-2 font-bold"><Bot className="text-primary h-6 w-6"/> AI Learning Assistant</SheetTitle>
           {selectedNode && 
-          <SheetDescription>
-            Asking about: <span className="font-semibold text-primary">{selectedNode.title}</span>
+          <SheetDescription className="text-sm">
+            You're learning about: <span className="font-semibold text-primary">{selectedNode.title}</span>
           </SheetDescription>
           }
         </SheetHeader>
 
         {selectedNode && (
-            <div className="px-6 py-3 border-b">
-                <p className="text-sm font-medium mb-2 text-muted-foreground">Update Progress:</p>
+            <div className="px-4 py-3 border-b border-border/50">
+                <p className="text-xs font-medium mb-2 text-muted-foreground">Mark your progress:</p>
                 <div className="flex items-center justify-around gap-2">
                     {statusActions.map(action => (
                         <Button
                             key={action.status}
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleStatusClick(action.status)}
-                            className={cn('flex-1 text-xs gap-1.5', action.className, currentNodeStatus === action.status && 'bg-primary/20')}
+                            className={cn('flex-1 text-xs gap-1.5 transition-all duration-200 border', action.className, currentNodeStatus === action.status ? 'bg-primary/20 text-primary' : 'bg-transparent')}
                             title={action.label}
                         >
                             <action.icon className="h-4 w-4" />
@@ -173,36 +187,39 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
         )}
 
         <ScrollArea className="flex-1" ref={scrollAreaRef}>
-            <div className="p-6 space-y-6">
-                <AnimatePresence>
+            <div className="p-4 space-y-6">
+                <AnimatePresence initial={false}>
                     {messages.map((message) => (
                     <motion.div
                         key={message.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
+                        layout
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
                         className={cn(
                         "flex items-start gap-3",
                         message.role === "user" && "justify-end"
                         )}
                     >
                         {message.role === "assistant" && (
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
-                        </Avatar>
+                          <Avatar className="h-8 w-8 bg-primary/10 border border-primary/20">
+                            <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-primary" /></AvatarFallback>
+                          </Avatar>
                         )}
                         <div className={cn(
-                            "p-3 rounded-lg max-w-[85%]",
+                            "p-3 rounded-xl max-w-[85%] shadow-sm",
                              message.role === "assistant" ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground",
-                             message.isInsight && "bg-transparent p-0 w-full max-w-full"
+                             message.isInsight && "bg-transparent p-0 w-full max-w-full shadow-none"
                              )}>
                             <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
                         </div>
 
                         {message.role === "user" && (
-                        <Avatar className="h-8 w-8">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src="" alt="User" />
                             <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
-                        </Avatar>
+                          </Avatar>
                         )}
                     </motion.div>
                     ))}
@@ -210,17 +227,17 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
                 </AnimatePresence>
             </div>
         </ScrollArea>
-        <div className="p-4 border-t bg-background">
+        <div className="p-4 border-t border-border/50 bg-background/50">
             <form onSubmit={handleSubmit}>
                 <div className="relative">
                     <Input 
                         placeholder="Ask a follow-up question..." 
-                        className="pr-12" 
+                        className="pr-12 rounded-full py-5 bg-secondary" 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         disabled={isInsightPending || isFollowUpPending || messages.length === 0}
                     />
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" type="submit" disabled={!input.trim() || isFollowUpPending}>
+                    <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground disabled:bg-muted disabled:text-muted-foreground" type="submit" disabled={!input.trim() || isFollowUpPending}>
                         <CornerDownLeft className="h-4 w-4" />
                     </Button>
                 </div>

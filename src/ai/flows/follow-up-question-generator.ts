@@ -22,7 +22,7 @@ export type FollowUpInput = z.infer<typeof FollowUpInputSchema>;
 const FollowUpOutputSchema = z.object({
   answer: z
     .string()
-    .describe("A helpful and concise answer to the user's question, formatted as a single string which may include markdown for clarity."),
+    .describe("A helpful and detailed answer to the user's question, formatted as a single string which may include markdown for clarity."),
 });
 export type FollowUpOutput = z.infer<typeof FollowUpOutputSchema>;
 
@@ -37,9 +37,14 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: FollowUpInputSchema },
   output: { schema: FollowUpOutputSchema },
-  prompt: `You are an expert learning advisor. The user is currently studying "{{nodeContent}}". They have asked the following follow-up question: "{{question}}". 
+  prompt: `You are an expert learning advisor and tutor. The user is currently studying "{{nodeContent}}". They have asked the following follow-up question: "{{question}}". 
 
-Provide a helpful and concise answer to their question in the context of their learning topic. Be encouraging and clear. Format your answer using markdown if it helps with readability (e.g., for lists or code snippets).`,
+Your task is to provide a helpful, detailed, and encouraging answer. 
+- Explain the concept clearly and concisely.
+- Use analogies or simple examples to aid understanding.
+- If relevant, provide code snippets or step-by-step instructions.
+- Be encouraging and supportive in your tone.
+- Format your answer using markdown (e.g., for lists, bold text, italics, code blocks) to make it easy to read.`,
 });
 
 
