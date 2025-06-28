@@ -191,6 +191,15 @@ export default function Home() {
             )}
           </Button>
         </form>
+
+        <div className="mt-8">
+            <Button asChild variant="outline" className="bg-transparent backdrop-blur-md">
+                <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
+                    <Linkedin className="mr-2 h-5 w-5" />
+                    Follow Us on LinkedIn
+                </a>
+            </Button>
+        </div>
       </section>
 
       <section className="py-24 w-full max-w-5xl">
@@ -294,19 +303,6 @@ export default function Home() {
             </Card>
           ))}
         </div>
-      </section>
-
-      <section className="py-24 w-full max-w-5xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Join Our Community
-        </h2>
-        <p className="text-muted-foreground mt-2 mb-8">Stay updated with the latest from PathFinder.</p>
-        <Button asChild size="lg" variant="outline" className="bg-transparent backdrop-blur-md">
-            <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
-                <Linkedin className="mr-2 h-5 w-5" />
-                Follow Us on LinkedIn
-            </a>
-        </Button>
       </section>
     </main>
   );
