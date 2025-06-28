@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -5,21 +6,32 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star, Loader2 } from "lucide-react";
+import { ArrowRight, BrainCircuit, Code, PenTool, Sparkles, GitMerge, Eye, Target, Shuffle, Play, Star, Loader2, Linkedin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAiRoadmap } from "./actions";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import LoginPromptDialog from "@/components/LoginPromptDialog";
+
 
 export default function Home() {
   const [goal, setGoal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginPromptOpen, setLoginPromptOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
 
   const handleGeneration = async (topic: string) => {
-    if (isLoading || !topic.trim()) {
+    if (isLoading || !topic.trim() || authLoading) {
       return;
     }
+
+    if (!user) {
+        setLoginPromptOpen(true);
+        return;
+    }
+
     setIsLoading(true);
 
     const result = await getAiRoadmap(topic.trim());
@@ -33,33 +45,10 @@ export default function Home() {
       setIsLoading(false);
       return;
     }
-
-    try {
-      const newId = crypto.randomUUID();
-      // Save the full roadmap data with its unique ID
-      localStorage.setItem(`roadmap-${newId}`, JSON.stringify(result));
-
-      // Retrieve, update, and save the history list
-      const history = JSON.parse(localStorage.getItem('roadmap-history') || '[]');
-      const newHistoryEntry = {
-        id: newId,
-        title: result.title,
-        query: topic.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      // Add the new entry to the beginning of the array
-      history.unshift(newHistoryEntry);
-      localStorage.setItem('roadmap-history', JSON.stringify(history));
-      
-      router.push(`/roadmap?id=${newId}`);
-    } catch (e) {
-      toast({
-        variant: 'destructive',
-        title: 'Could not save roadmap',
-        description: 'There was an error saving the roadmap to your browser storage. It might be full.',
-      });
-      setIsLoading(false);
-    }
+    
+    // The roadmap is saved in the action, and the full data is returned.
+    // We get the ID from the returned data.
+    router.push(`/roadmap?id=${result.id}`);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -145,6 +134,13 @@ export default function Home() {
         <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-[radial-gradient(circle_400px_at_50%_300px,#a020f033,transparent)]"></div>
       </div>
       
+      <LoginPromptDialog 
+        isOpen={isLoginPromptOpen}
+        onOpenChange={setLoginPromptOpen}
+        title="Start Your Journey"
+        description="Please log in or create an account to generate and save your personalized learning roadmap."
+      />
+
       <section className="w-full max-w-3xl text-center min-h-[calc(100vh-8rem)] flex flex-col justify-center items-center">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-primary to-accent">
           Chart Your Course to Mastery
@@ -163,10 +159,10 @@ export default function Home() {
             onChange={(e) => setGoal(e.target.value)}
             className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm"
             aria-label="Learning Goal Input"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           />
-          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || !goal.trim()}>
-            {isLoading ? (
+          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || !goal.trim() || authLoading}>
+            {isLoading || authLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Please wait...
@@ -192,10 +188,10 @@ export default function Home() {
           {trendingTopics.map((topic) => (
             <Card
               key={topic.name}
-              className="group cursor-pointer bg-card/80 backdrop-blur-sm hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 border-transparent border-2"
+              className="group cursor-pointer bg-card/40 backdrop-blur-md hover:border-primary transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 border border-border/20"
               onClick={() => handleCardClick(topic.name)}
               onKeyDown={(e) => e.key === 'Enter' && handleCardClick(topic.name)}
-              tabIndex={isLoading ? -1 : 0}
+              tabIndex={(isLoading || authLoading) ? -1 : 0}
             >
               <CardHeader className="flex flex-col items-center text-center gap-4 pb-2">
                 {topic.icon}
@@ -211,7 +207,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-24 w-full max-w-5xl bg-card/50 rounded-2xl">
+      <section className="py-24 w-full max-w-5xl bg-card/40 backdrop-blur-md rounded-2xl border border-border/20">
         <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4 tracking-tight">Unlock Your Potential</h2>
             <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">PathFinder provides the tools you need to succeed on your learning adventure.</p>
@@ -262,7 +258,7 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {testimonials.map((testimonial) => (
-            <Card key={testimonial.name} className="bg-card/80 backdrop-blur-sm flex flex-col justify-between">
+            <Card key={testimonial.name} className="bg-card/40 backdrop-blur-md flex flex-col justify-between border border-border/20">
                 <CardContent className="pt-6">
                     <div className="flex gap-1 mb-2">
                         {[...Array(5)].map((_, i) => <Star key={i} className="text-primary fill-primary h-4 w-4" />)}
@@ -282,6 +278,19 @@ export default function Home() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section className="py-24 w-full max-w-5xl text-center">
+        <h2 className="text-3xl font-bold tracking-tight mb-4">
+            Join Our Community
+        </h2>
+        <p className="text-muted-foreground mt-2 mb-8">Stay updated with the latest from PathFinder.</p>
+        <Button asChild size="lg" variant="outline" className="bg-transparent backdrop-blur-md">
+            <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
+                <Linkedin className="mr-2 h-5 w-5" />
+                Follow Us on LinkedIn
+            </a>
+        </Button>
       </section>
     </main>
   );
