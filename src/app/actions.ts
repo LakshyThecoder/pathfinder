@@ -4,6 +4,8 @@
 import { generateRoadmap, GenerateRoadmapOutput } from "@/ai/flows/roadmap-generator";
 import { roadmapInsightGenerator, RoadmapInsightOutput, RoadmapInsightInput } from "@/ai/flows/roadmap-insight-generator";
 import { getFollowUpAnswer as getFollowUpAnswerFlow, FollowUpInput, FollowUpOutput } from "@/ai/flows/follow-up-question-generator";
+import { generateSuggestion, SuggestionInput, SuggestionOutput } from "@/ai/flows/suggestion-generator";
+
 
 export async function getAiRoadmap(query: string): Promise<GenerateRoadmapOutput | { error: string }> {
     try {
@@ -32,5 +34,15 @@ export async function getFollowUpAnswer(input: FollowUpInput): Promise<FollowUpO
   } catch (e: any) {
     console.error("Error in getFollowUpAnswer:", e);
     return { error: e.message || "Failed to get an answer. Please try again." };
+  }
+}
+
+export async function getSuggestion(input: SuggestionInput): Promise<SuggestionOutput | { error: string }> {
+  try {
+    const result = await generateSuggestion(input);
+    return result;
+  } catch (e: any) {
+    console.error("Error in getSuggestion:", e);
+    return { error: e.message || "Failed to generate a suggestion. Please try again." };
   }
 }

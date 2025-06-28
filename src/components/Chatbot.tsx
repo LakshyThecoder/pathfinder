@@ -4,9 +4,9 @@ import { useEffect, useState, useTransition, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import type { RoadmapNodeData, NodeStatus } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getRoadmapInsight, getFollowUpAnswer } from "@/app/actions";
+import { getRoadmapInsight, getFollowUpAnswer, getSuggestion } from "@/app/actions";
 import type { RoadmapInsightOutput } from "@/ai/flows/roadmap-insight-generator";
-import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw, Zap, Lightbulb, AlertTriangle, BookOpen, Clock } from "lucide-react";
+import { CornerDownLeft, Bot, User, Check, CircleDashed, X, RotateCcw, Zap, Lightbulb, AlertTriangle, BookOpen, Clock, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -86,6 +86,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
   const [input, setInput] = useState("");
   const [isInsightPending, startInsightTransition] = useTransition();
   const [isFollowUpPending, startFollowUpTransition] = useTransition();
+  const [isChallengePending, startChallengeTransition] = useTransition();
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -118,7 +119,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
     if (viewport) {
       viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages, isInsightPending, isFollowUpPending]);
+  }, [messages, isInsightPending, isFollowUpPending, isChallengePending]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,9 +135,33 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
         toast({ variant: "destructive", title: "Error", description: result.error });
         setMessages(prev => prev.slice(0, -1)); 
       } else {
-        const assistantMessage: Message = { id: `assistant-${Date.now()}`, role: "assistant", content: <div className="prose prose-sm prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1" dangerouslySetInnerHTML={{ __html: result.answer.replace(/\n/g, '<br/>') }} /> };
+        const assistantMessage: Message = { id: `assistant-${Date.now()}`, role: "assistant", content: <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-ul:list-disc prose-ul:pl-5 prose-li:my-1" dangerouslySetInnerHTML={{ __html: result.answer.replace(/\n/g, '<br/>') }} /> };
         setMessages(prev => [...prev, assistantMessage]);
       }
+    });
+  };
+
+  const handleChallengeClick = () => {
+    if (!selectedNode || isChallengePending) return;
+
+    startChallengeTransition(async () => {
+        const result = await getSuggestion({ topic: selectedNode.title, level: selectedNode.level });
+        if ("error" in result) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            const challengeMessage: Message = { 
+                id: `challenge-${Date.now()}`, 
+                role: "assistant", 
+                content: (
+                    <div className="space-y-2">
+                        <h4 className="font-semibold text-primary flex items-center gap-2"><Sparkles className="h-5 w-5" /> Here's a Challenge:</h4>
+                        <p className="text-sm">{result.challenge}</p>
+                        <p className="text-xs text-muted-foreground">Est. time: {result.estimatedTime}</p>
+                    </div>
+                ) 
+            };
+            setMessages(prev => [...prev, challengeMessage]);
+        }
     });
   };
 
@@ -152,6 +177,8 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
     { status: 'skipped' as NodeStatus, label: 'Skip', icon: X, className: 'hover:bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20' },
     { status: 'not-started' as NodeStatus, label: 'Reset', icon: RotateCcw, className: 'hover:bg-amber-500/10 text-amber-500 border-amber-500/20' },
   ];
+
+  const isPending = isInsightPending || isFollowUpPending || isChallengePending;
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -223,11 +250,15 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
                         )}
                     </motion.div>
                     ))}
-                    {(isInsightPending || isFollowUpPending) && <TypingIndicator />}
+                    {isPending && <TypingIndicator />}
                 </AnimatePresence>
             </div>
         </ScrollArea>
-        <div className="p-4 border-t border-border/50 bg-background/50">
+        <div className="p-4 border-t border-border/50 bg-background/50 space-y-2">
+            <Button variant="outline" size="sm" className="w-full" onClick={handleChallengeClick} disabled={isPending || messages.length === 0}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Suggest a Practical Challenge
+            </Button>
             <form onSubmit={handleSubmit}>
                 <div className="relative">
                     <Input 
@@ -235,7 +266,7 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
                         className="pr-12 rounded-full py-5 bg-secondary" 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        disabled={isInsightPending || isFollowUpPending || messages.length === 0}
+                        disabled={isPending || messages.length === 0}
                     />
                     <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground disabled:bg-muted disabled:text-muted-foreground" type="submit" disabled={!input.trim() || isFollowUpPending}>
                         <CornerDownLeft className="h-4 w-4" />
