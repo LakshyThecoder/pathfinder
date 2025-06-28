@@ -6,7 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PathFinder",
+  title: "QuantumStack X Valndor",
   description: "Visually displays a dynamic roadmap tree for your learning goals.",
 };
 

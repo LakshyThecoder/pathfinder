@@ -130,14 +130,14 @@ export default function Home() {
       role: "Software Engineer",
       avatar: "https://placehold.co/100x100.png",
       dataAiHint: "man portrait",
-      text: "PathFinder completely changed how I approach learning new technologies. The visual roadmaps are a game-changer for understanding the big picture.",
+      text: "This platform completely changed how I approach learning new technologies. The visual roadmaps are a game-changer for understanding the big picture.",
     },
     {
       name: "Samantha Lee",
       role: "UX Designer",
       avatar: "https://placehold.co/100x100.png",
       dataAiHint: "woman portrait",
-      text: "As a visual learner, PathFinder is a dream come true. I was able to map out my journey into product management and stay motivated the whole way through.",
+      text: "As a visual learner, this is a dream come true. I was able to map out my journey into product management and stay motivated the whole way through.",
     },
     {
       name: "David Chen",
@@ -161,7 +161,7 @@ export default function Home() {
           Chart Your Course to Mastery
         </h1>
         <p className="text-lg text-muted-foreground mt-4 mb-8 max-w-xl mx-auto">
-          From 'Hello World' to expert, PathFinder generates dynamic, visual roadmaps for any skill you want to master.
+          From 'Hello World' to expert, QuantumStack X Valndor generates dynamic, visual roadmaps for any skill you want to master.
         </p>
         <form
           onSubmit={handleSubmit}
@@ -225,7 +225,7 @@ export default function Home() {
       <section className="py-24 w-full max-w-5xl bg-card/40 backdrop-blur-md rounded-2xl border border-border/20">
         <div className="container mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4 tracking-tight">Unlock Your Potential</h2>
-            <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">PathFinder provides the tools you need to succeed on your learning adventure.</p>
+            <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">QuantumStack X Valndor provides the tools you need to succeed on your learning adventure.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
               {features.map((feature) => (
                 <Card key={feature.title} className="bg-transparent backdrop-blur-sm p-6 border-0 shadow-none">
@@ -299,7 +299,7 @@ export default function Home() {
         <h2 className="text-3xl font-bold tracking-tight mb-4">
             Join Our Community
         </h2>
-        <p className="text-muted-foreground mt-2 mb-8">Stay updated with the latest from PathFinder.</p>
+        <p className="text-muted-foreground mt-2 mb-8">Stay updated with the latest from QuantumStack X Valndor.</p>
         <Button asChild size="lg" variant="outline" className="bg-transparent backdrop-blur-md">
             <a href="https://www.linkedin.com/company/quantumstackqs" target="_blank" rel="noopener noreferrer">
                 <Linkedin className="mr-2 h-5 w-5" />
