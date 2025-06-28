@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useTransition, useRef } from "react";
@@ -191,7 +192,11 @@ export default function Chatbot({ isOpen, onOpenChange, selectedNode, onStatusCh
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side={isMobile ? "bottom" : "right"} className="w-full md:max-w-md lg:max-w-lg p-0 flex flex-col bg-card/80 backdrop-blur-sm" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <SheetContent 
+        side={isMobile ? "bottom" : "right"} 
+        className={cn("w-full md:max-w-md lg:max-w-lg p-0 flex flex-col bg-card/80 backdrop-blur-sm", isMobile && "h-full")}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader className="p-4 border-b border-border/50">
           <SheetTitle className="text-xl flex items-center gap-2 font-bold"><Bot className="text-primary h-6 w-6"/> AI Learning Assistant</SheetTitle>
           {selectedNode && 
