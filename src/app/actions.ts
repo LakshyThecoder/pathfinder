@@ -9,6 +9,13 @@ import { getDecodedIdToken } from "@/lib/firebase-admin";
 import { getUserRoadmaps, getDashboardStats, saveRoadmap, getRoadmap as getRoadmapFromDb, updateNodeStatus as updateNodeStatusInDb } from "@/lib/firestore";
 import type { StoredRoadmap, NodeStatus, RoadmapNodeData } from "@/types";
 
+function handleAiError(e: any, defaultMessage: string): { error: string } {
+    console.error("AI Action Error:", e);
+    if (e.message && (e.message.includes('429') || e.message.toLowerCase().includes('rate limit'))) {
+        return { error: "You've made too many requests in a short time. Please wait a minute and try again." };
+    }
+    return { error: e.message || defaultMessage };
+}
 
 export async function getAiRoadmap(query: string): Promise<StoredRoadmap | RoadmapNodeData | { error: string }> {
     try {
@@ -25,8 +32,7 @@ export async function getAiRoadmap(query: string): Promise<StoredRoadmap | Roadm
       return generatedRoadmapData;
 
     } catch (e: any) {
-      console.error("Error in getAiRoadmap:", e);
-      return { error: e.message || "Failed to generate the roadmap. The AI may be busy or the topic is too complex. Please try again later or with a different topic." };
+      return handleAiError(e, "Failed to generate the roadmap. The AI may be busy or the topic is too complex. Please try again later or with a different topic.");
     }
 }
 
@@ -70,8 +76,7 @@ export async function getRoadmapInsight(input: RoadmapInsightInput): Promise<Roa
     const result = await roadmapInsightGenerator(input);
     return result;
   } catch (e: any) {
-    console.error("Error in getRoadmapInsight:", e);
-    return { error: e.message || "Failed to generate insights. Please try again." };
+    return handleAiError(e, "Failed to generate insights. Please try again.");
   }
 }
 
@@ -80,8 +85,7 @@ export async function getFollowUpAnswer(input: FollowUpInput): Promise<FollowUpO
     const result = await getFollowUpAnswerFlow(input);
     return result;
   } catch (e: any) {
-    console.error("Error in getFollowUpAnswer:", e);
-    return { error: e.message || "Failed to get an answer. Please try again." };
+    return handleAiError(e, "Failed to get an answer. Please try again.");
   }
 }
 
@@ -90,8 +94,7 @@ export async function getSuggestion(input: SuggestionInput): Promise<SuggestionO
     const result = await generateSuggestion(input);
     return result;
   } catch (e: any) {
-    console.error("Error in getSuggestion:", e);
-    return { error: e.message || "Failed to generate a suggestion. Please try again." };
+    return handleAiError(e, "Failed to generate a suggestion. Please try again.");
   }
 }
 
@@ -157,7 +160,10 @@ export async function getDailyChallengeAction(): Promise<SuggestionOutput | { er
         
         return generateSuggestion({ topic: randomNode.title, level: randomNode.level });
     } catch(e: any) {
+        // This catch block primarily handles errors from Firestore, not the AI call.
+        // The call to generateSuggestion() has its own error handling within getSuggestion.
+        // However, we can add a fallback here too.
         console.error("Error in getDailyChallengeAction:", e);
-        return generateSuggestion({ topic: 'Creative thinking', level: 'Intermediate' });
+        return handleAiError(e, "Could not generate a daily challenge. Try again later.");
     }
 }
