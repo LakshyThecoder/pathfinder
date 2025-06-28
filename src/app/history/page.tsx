@@ -8,38 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Search, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import PageLoading from '@/components/PageLoading';
+import { getHistoryAction } from '../actions';
+import type { StoredRoadmap } from '@/types';
+import AuthWall from '@/components/AuthWall';
+import { useAuth } from '@/context/AuthContext';
 
-interface HistoryItem {
-  id: string;
-  title: string;
-  query: string;
-  createdAt: string;
-}
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([]);
+  const [history, setHistory] = useState<StoredRoadmap[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<StoredRoadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    setLoading(true);
-    const storedHistory = localStorage.getItem('roadmap-history');
-    if (storedHistory) {
-      try {
-        const parsedHistory: HistoryItem[] = JSON.parse(storedHistory);
-        // Sort by date just in case, newest first
-        parsedHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setHistory(parsedHistory);
-        setFilteredHistory(parsedHistory);
-      } catch (e) {
-        console.error("Failed to parse history from localStorage", e);
-        setHistory([]);
-        setFilteredHistory([]);
-      }
+    if (user) {
+        setLoading(true);
+        const fetchHistory = async () => {
+            const result = await getHistoryAction();
+            if (Array.isArray(result)) {
+                setHistory(result);
+                setFilteredHistory(result);
+            } else {
+                console.error("Failed to fetch history", result.error);
+                setHistory([]);
+                setFilteredHistory([]);
+            }
+            setLoading(false);
+        };
+        fetchHistory();
     }
-    setLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const results = history.filter(item =>
@@ -50,12 +49,20 @@ export default function HistoryPage() {
   }, [searchTerm, history]);
 
 
-  if (loading) {
+  if (authLoading || (user && loading)) {
      return (
         <div className="container mx-auto py-10 px-4">
             <PageLoading message="Loading your roadmap history..." />
         </div>
     );
+  }
+
+  if (!user) {
+      return (
+        <div className="container mx-auto py-10 px-4">
+            <AuthWall title="View Your History" description="Please log in or create an account to see your previously generated roadmaps." />
+        </div>
+      )
   }
 
   return (

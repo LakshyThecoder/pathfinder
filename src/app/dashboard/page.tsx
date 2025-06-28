@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import AuthWall from '@/components/AuthWall';
 import { getDashboardDataAction, getDailyChallengeAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
-import type { DailyChallengeOutput } from '@/ai/flows/suggestion-generator';
+import type { SuggestionOutput } from '@/ai/flows/suggestion-generator';
 import PageLoading from '@/components/PageLoading';
 
 type ClientRoadmap = Omit<StoredRoadmap, 'createdAt'> & { createdAt: string };
@@ -29,7 +30,7 @@ interface DashboardData {
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
-    const [challenge, setChallenge] = useState<Partial<DailyChallengeOutput> & { error?: string } | null>(null);
+    const [challenge, setChallenge] = useState<Partial<SuggestionOutput> & { error?: string } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
