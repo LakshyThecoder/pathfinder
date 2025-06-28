@@ -11,25 +11,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAiRoadmap } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import LoginPromptDialog from "@/components/LoginPromptDialog";
 
 
 export default function Home() {
   const [goal, setGoal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoginPromptOpen, setLoginPromptOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
 
   const handleGeneration = async (topic: string) => {
     if (isLoading || !topic.trim() || authLoading) {
       return;
-    }
-
-    if (!user) {
-        setLoginPromptOpen(true);
-        return;
     }
 
     setIsLoading(true);
@@ -46,9 +39,24 @@ export default function Home() {
       return;
     }
     
-    // The roadmap is saved in the action, and the full data is returned.
-    // We get the ID from the returned data.
-    router.push(`/roadmap?id=${result.id}`);
+    // `StoredRoadmap` has `userId`, temporary `RoadmapNodeData` does not.
+    if ("userId" in result) {
+        router.push(`/roadmap?id=${result.id}`);
+    } else {
+        try {
+            // Save temporary roadmap to session storage
+            sessionStorage.setItem(`temp_roadmap_${result.id}`, JSON.stringify(result));
+            router.push(`/roadmap?id=${result.id}`);
+        } catch (error) {
+            console.error("Failed to save temp roadmap:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Browser Error',
+                description: 'Could not save the temporary roadmap in your browser.',
+            });
+            setIsLoading(false);
+        }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -134,13 +142,6 @@ export default function Home() {
         <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-[radial-gradient(circle_400px_at_50%_300px,#a020f033,transparent)]"></div>
       </div>
       
-      <LoginPromptDialog 
-        isOpen={isLoginPromptOpen}
-        onOpenChange={setLoginPromptOpen}
-        title="Start Your Journey"
-        description="Please log in or create an account to generate and save your personalized learning roadmap."
-      />
-
       <section className="w-full max-w-3xl text-center min-h-[calc(100vh-8rem)] flex flex-col justify-center items-center">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-primary to-accent">
           Chart Your Course to Mastery

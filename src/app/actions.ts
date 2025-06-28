@@ -1,27 +1,28 @@
 
 "use server";
 
-import { generateRoadmap, GenerateRoadmapOutput } from "@/ai/flows/roadmap-generator";
+import { generateRoadmap, GenerateRoadmapOutput, GenerateRoadmapInput } from "@/ai/flows/roadmap-generator";
 import { roadmapInsightGenerator, RoadmapInsightOutput, RoadmapInsightInput } from "@/ai/flows/roadmap-insight-generator";
 import { getFollowUpAnswer as getFollowUpAnswerFlow, FollowUpInput, FollowUpOutput } from "@/ai/flows/follow-up-question-generator";
 import { generateSuggestion, SuggestionInput, SuggestionOutput } from "@/ai/flows/suggestion-generator";
 import { getDecodedIdToken } from "@/lib/firebase-admin";
 import { getUserRoadmaps, getDashboardStats, saveRoadmap, getRoadmap as getRoadmapFromDb, updateNodeStatus as updateNodeStatusInDb } from "@/lib/firestore";
-import type { StoredRoadmap, NodeStatus } from "@/types";
+import type { StoredRoadmap, NodeStatus, RoadmapNodeData } from "@/types";
 
 
-export async function getAiRoadmap(query: string): Promise<StoredRoadmap | { error: string }> {
+export async function getAiRoadmap(query: string): Promise<StoredRoadmap | RoadmapNodeData | { error: string }> {
     try {
       const decodedToken = await getDecodedIdToken();
-      if (!decodedToken) {
-          return { error: "You must be logged in to generate a roadmap." };
+      const generatedRoadmapData = await generateRoadmap({ query });
+
+      // If user is logged in, save the roadmap to their account
+      if (decodedToken) {
+        const savedRoadmap = await saveRoadmap(decodedToken.uid, generatedRoadmapData, query);
+        return savedRoadmap;
       }
 
-      const generatedRoadmapData = await generateRoadmap({ query });
-      
-      const savedRoadmap = await saveRoadmap(decodedToken.uid, generatedRoadmapData, query);
-
-      return savedRoadmap;
+      // If user is not logged in, return the transient roadmap data
+      return generatedRoadmapData;
 
     } catch (e: any) {
       console.error("Error in getAiRoadmap:", e);
