@@ -16,7 +16,7 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/history", label: "History", auth: true },
+    { href: "/history", label: "History" },
     { href: "/dashboard", label: "Dashboard", auth: true },
   ];
 

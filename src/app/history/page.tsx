@@ -10,21 +10,22 @@ import Link from "next/link";
 import PageLoading from '@/components/PageLoading';
 import { getHistoryAction } from '../actions';
 import type { StoredRoadmap } from '@/types';
-import AuthWall from '@/components/AuthWall';
 import { useAuth } from '@/context/AuthContext';
 
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<StoredRoadmap[]>([]);
-  const [filteredHistory, setFilteredHistory] = useState<StoredRoadmap[]>([]);
+  const [history, setHistory] = useState<Partial<StoredRoadmap>[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<Partial<StoredRoadmap>[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (user) {
-        setLoading(true);
-        const fetchHistory = async () => {
+    if (authLoading) return; // Wait until auth state is determined
+
+    setLoading(true);
+    const fetchHistory = async () => {
+        if (user) {
             const result = await getHistoryAction();
             if (Array.isArray(result)) {
                 setHistory(result);
@@ -34,35 +35,40 @@ export default function HistoryPage() {
                 setHistory([]);
                 setFilteredHistory([]);
             }
-            setLoading(false);
-        };
-        fetchHistory();
-    }
-  }, [user]);
+        } else {
+            // Load from local storage for logged-out users
+            try {
+                const localHistoryJson = localStorage.getItem('local_roadmap_history');
+                const localHistory = localHistoryJson ? JSON.parse(localHistoryJson) : [];
+                setHistory(localHistory);
+                setFilteredHistory(localHistory);
+            } catch (e) {
+                console.error("Failed to parse local history", e);
+                setHistory([]);
+                setFilteredHistory([]);
+            }
+        }
+        setLoading(false);
+    };
+    
+    fetchHistory();
+  }, [user, authLoading]);
 
   useEffect(() => {
     const results = history.filter(item =>
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.query && item.query.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredHistory(results);
   }, [searchTerm, history]);
 
 
-  if (authLoading || (user && loading)) {
+  if (authLoading || loading) {
      return (
         <div className="container mx-auto py-10 px-4">
             <PageLoading message="Loading your roadmap history..." />
         </div>
     );
-  }
-
-  if (!user) {
-      return (
-        <div className="container mx-auto py-10 px-4">
-            <AuthWall title="View Your History" description="Please log in or create an account to see your previously generated roadmaps." />
-        </div>
-      )
   }
 
   return (
@@ -89,7 +95,7 @@ export default function HistoryPage() {
             <Card key={item.id} className="hover:shadow-lg hover:border-primary/50 transition-all flex flex-col">
               <CardHeader>
                 <CardTitle>{item.title}</CardTitle>
-                <CardDescription>Original query: "{item.query}"</CardDescription>
+                {item.query && <CardDescription>Original query: "{item.query}"</CardDescription>}
               </CardHeader>
               <CardContent className="flex-grow">
                  {item.createdAt && (
