@@ -76,7 +76,9 @@ export default function HistoryPage() {
       <div className="flex flex-col items-center text-center mb-8">
         <HistoryIcon className="h-12 w-12 text-primary mb-4" />
         <h1 className="text-4xl font-bold">Your Roadmap History</h1>
-        <p className="text-muted-foreground mt-2">Revisit your learning journeys.</p>
+        <p className="text-muted-foreground mt-2 max-w-xl">
+            {user ? "Revisit your learning journeys, saved to your account." : "Your recent roadmaps, saved in this browser."}
+        </p>
       </div>
       <div className="flex items-center gap-4 mb-8 max-w-lg mx-auto">
         <div className="relative flex-1">
@@ -118,13 +120,18 @@ export default function HistoryPage() {
             <p className="text-muted-foreground mt-2 mb-4">
               {searchTerm 
                 ? "No roadmaps match your search criteria."
-                : "You haven't generated any roadmaps yet."
+                : user ? "You haven't generated any roadmaps yet." : "Roadmaps you create will be saved here in your browser."
               }
             </p>
             {!searchTerm && (
                 <Button asChild>
                     <Link href="/">Start a New Roadmap</Link>
                 </Button>
+            )}
+            {!user && !searchTerm && (
+              <p className="text-sm text-muted-foreground mt-4">
+                <Link href="/login" className="underline hover:text-primary">Sign in</Link> to save your history across devices.
+              </p>
             )}
         </div>
       )}
