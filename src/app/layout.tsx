@@ -6,8 +6,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "QuantumStack X Valndor",
-  description: "Visually displays a dynamic roadmap tree for your learning goals.",
+  title: "PathFinder",
+  description: "PathFinder by QuantumStack X Valndor. Visually displays a dynamic roadmap tree for your learning goals.",
 };
 
 export default function RootLayout({

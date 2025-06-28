@@ -22,9 +22,9 @@ export default function Header() {
 
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
-      <Link href="/" className="flex items-center justify-center mr-6" aria-label="QuantumStack X Valndor Home">
+      <Link href="/" className="flex items-center justify-center mr-6" aria-label="PathFinder Home">
         <GitMerge className="h-6 w-6 text-primary" />
-        <span className="font-semibold text-xl ml-2">QuantumStack X Valndor</span>
+        <span className="font-semibold text-xl ml-2">PathFinder</span>
       </Link>
       <nav className="hidden md:flex items-center gap-4 sm:gap-6">
         {navLinks.map((link) => {
