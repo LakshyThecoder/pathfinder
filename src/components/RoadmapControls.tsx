@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Download } from 'lucide-react';
@@ -41,7 +42,7 @@ export default function RoadmapControls({ roadmapTitle }: RoadmapControlsProps) 
 
     return (
         <TooltipProvider>
-            <div className="absolute top-6 right-6 z-20">
+            <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20">
                 <div className="flex items-center gap-1 p-1 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg">
                     {/* Download Button */}
                     <Tooltip>

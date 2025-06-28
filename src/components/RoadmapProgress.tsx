@@ -1,3 +1,4 @@
+
 import { Progress } from "@/components/ui/progress";
 
 interface RoadmapProgressProps {
@@ -11,7 +12,7 @@ export default function RoadmapProgress({ totalNodes, completedNodes, skippedNod
     const percentage = trackableNodes > 0 ? Math.round((completedNodes / trackableNodes) * 100) : 0;
 
     return (
-        <div className="absolute top-6 left-6 z-20 w-64 p-3 rounded-lg bg-card/80 backdrop-blur-sm border border-border shadow-lg">
+        <div className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-auto md:w-64 z-20 p-3 rounded-lg bg-card/80 backdrop-blur-sm border border-border shadow-lg">
             <div className="flex justify-between items-center mb-1">
                 <h3 className="text-sm font-semibold">Roadmap Progress</h3>
                 <p className="text-sm font-bold text-primary">{percentage}%</p>

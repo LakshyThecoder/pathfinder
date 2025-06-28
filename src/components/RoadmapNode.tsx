@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { RoadmapNodeData, NodeStatus } from '@/types';
@@ -44,7 +45,7 @@ export default function RoadmapNode({ node, onNodeSelect, isSelected, status }: 
     <motion.div
       onClick={() => onNodeSelect(node)}
       className={cn(
-        'relative z-10 w-[220px] min-h-[100px] p-4 rounded-xl shadow-lg cursor-pointer transition-all duration-300 border-2 flex items-center justify-center',
+        'relative z-10 w-[200px] sm:w-[220px] min-h-[100px] p-4 rounded-xl shadow-lg cursor-pointer transition-all duration-300 border-2 flex items-center justify-center',
         'bg-card text-card-foreground',
         isSelected ? 'border-primary scale-105 shadow-primary/20' : currentStatus.className
       )}

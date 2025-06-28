@@ -1,8 +1,9 @@
+
 "use client";
 
 import type { RoadmapNodeData, NodeStatus } from '@/types';
 import RoadmapNode from './RoadmapNode';
-import { ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 
 interface RoadmapTreeProps {
   data: RoadmapNodeData;
@@ -15,7 +16,7 @@ const TreeColumn = ({ nodes, onNodeSelect, selectedNodeId, title, nodeStatuses }
   if (nodes.length === 0) return null;
   
   return (
-    <div className="flex flex-col items-center gap-8 min-w-[250px]">
+    <div className="flex flex-col items-center gap-8 min-w-[220px] sm:min-w-[250px]">
        <h2 className="text-2xl font-semibold text-muted-foreground">{title}</h2>
        <div className="flex flex-col items-center gap-12 relative">
         <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-border -translate-x-1/2 h-full -z-10" />
@@ -45,14 +46,17 @@ export default function RoadmapTree({ data, onNodeSelect, selectedNodeId, nodeSt
     const filledLevels = Object.entries(levels).filter(([, nodes]) => nodes.length > 0);
 
   return (
-    <div className="p-8 h-full w-full overflow-auto">
-        <h1 className="text-4xl font-bold mb-16 text-center text-foreground capitalize">{data.title}</h1>
-        <div className="flex justify-center items-start gap-8 lg:gap-16 px-4">
+    <div className="p-4 md:p-8 h-full w-full overflow-auto">
+        <h1 className="text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center text-foreground capitalize">{data.title}</h1>
+        <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-8 lg:gap-16 px-4">
            {filledLevels.map(([level, nodes], index) => (
-                <div key={level} className="flex items-center">
+                <div key={level} className="flex flex-col md:flex-row items-center w-full">
                     <TreeColumn title={level} nodes={nodes} onNodeSelect={onNodeSelect} selectedNodeId={selectedNodeId} nodeStatuses={nodeStatuses} />
                     {index < filledLevels.length - 1 && 
-                        <ArrowRight className="h-12 w-12 text-border mx-4 lg:mx-8" />
+                        <>
+                          <ArrowDown className="h-12 w-12 text-border my-4 md:hidden" />
+                          <ArrowRight className="h-12 w-12 text-border mx-4 lg:mx-8 hidden md:block" />
+                        </>
                     }
                 </div>
            ))}

@@ -166,18 +166,18 @@ export default function Home() {
         </p>
         <form
           onSubmit={handleSubmit}
-          className="flex w-full max-w-lg mx-auto items-center space-x-2"
+          className="flex flex-col sm:flex-row w-full max-w-lg mx-auto items-center gap-2"
         >
           <Input
             type="text"
             placeholder="What do you want to learn?"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm"
+            className="flex-1 py-6 text-base rounded-full bg-background/50 backdrop-blur-sm w-full"
             aria-label="Learning Goal Input"
             disabled={isLoading || authLoading}
           />
-          <Button type="submit" size="lg" className="py-6 rounded-full" disabled={isLoading || !goal.trim() || authLoading}>
+          <Button type="submit" size="lg" className="py-6 rounded-full w-full sm:w-auto" disabled={isLoading || !goal.trim() || authLoading}>
             {isLoading || authLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
